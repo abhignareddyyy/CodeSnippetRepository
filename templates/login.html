@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 bg-dark-surface p-8 rounded-xl shadow-2xl border border-gray-800 transform transition-all duration-300 hover:shadow-accent/5">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-100">
+                Welcome Back
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-400">
+                Sign in to your account
+            </p>
+        </div>
+        <form class="mt-8 space-y-6" method="POST" action="{{ url_for('login') }}" id="login-form">
+            {{ form.hidden_tag() }}  <!-- Adds CSRF token -->
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div class="relative transition-transform duration-200">
+                    {{ form.username.label(class="absolute left-3 top-3 text-gray-500 text-sm transition-all duration-200") }}
+                    {{ form.username(id="username", class="appearance-none rounded-t-xl relative block w-full px-3 pt-6 pb-2 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200", autocomplete="username") }}
+                </div>
+                <div class="relative transition-transform duration-200">
+                    {{ form.password.label(class="absolute left-3 top-3 text-gray-500 text-sm transition-all duration-200") }}
+                    {{ form.password(id="password", class="appearance-none rounded-b-xl relative block w-full px-3 pt-6 pb-2 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200", autocomplete="current-password") }}
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input id="remember-me" 
+                           name="remember-me" 
+                           type="checkbox"
+                           class="h-4 w-4 bg-dark-surface-2 border-gray-800 rounded text-accent focus:ring-accent focus:ring-offset-dark-surface">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-400">
+                        Remember me
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                {{ form.submit(class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-dark focus:ring-offset-dark-surface transition-all duration-200 ease-in-out") }}
+                <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                    <svg class="h-5 w-5 text-accent-dark group-hover:text-accent transition-colors duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                    </svg>
+                </span>
+            </div>
+        </form>
+
+        <div class="text-center">
+            <p class="text-sm text-gray-400">
+                Don't have an account? 
+                <a href="{{ url_for('register') }}" class="font-medium text-accent hover:text-accent-dark transition-colors duration-200">
+                    Register here
+                </a>
+            </p>
+        </div>
+
+        <div id="error-container" class="hidden">
+            <div class="bg-red-900/50 text-red-200 px-4 py-2 rounded-lg text-sm"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

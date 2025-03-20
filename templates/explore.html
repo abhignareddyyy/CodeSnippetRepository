@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen py-12">
+    <div class="w-full px-4 sm:px-6 lg:px-8">
+        <!-- Header Section -->
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-4xl font-bold tracking-tight bg-gradient-to-r from-vesper-orange to-ash bg-clip-text dark:text-transparent text-charcoal">
+                Explore Snippets
+            </h1>
+            {% if 'user_id' in session %}
+                <a href="{{ url_for('new_snippet') }}" 
+                   class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-vesper-accent to-royal-dark text-sm font-medium text-white rounded-xl shadow-elegant hover:shadow-subtle-glow hover:scale-105 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Snippet
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="flex flex-wrap gap-5 mb-10 dark:bg-noir-light bg-cloud rounded-2xl p-6 shadow-elegant">
+            <div class="relative flex-grow">
+                <input type="text" 
+                       id="user-search" 
+                       placeholder="Search users..." 
+                       class="w-full dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-ash text-silver focus:ring-2 focus:ring-vesper-accent/50 focus:border-vesper-accent shadow-elegant transition-all duration-200">
+                <div id="search-results" class="absolute w-full mt-2 bg-white dark:bg-dark-surface-2 border dark:border-gray-800 border-silver rounded-xl shadow-elegant hidden">
+                </div>
+            </div>
+            <select id="sort-by" class="dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-ash text-silver min-w-[150px] focus:ring-2 focus:ring-vesper-accent/50 focus:border-vesper-accent shadow-elegant transition-all duration-200">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="most-voted">Most Voted</option>
+                <option value="most-rated">Highest Rated</option>
+            </select>
+        </div>
+
+        <!-- Snippets Grid -->
+        {% if snippets %}
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {% for snippet in snippets %}
+                <div class="snippet-card bg-gradient-to-br dark:from-noir-light dark:to-dark-surface-2 from-cloud to-white border dark:border-gray-800 border-silver rounded-lg overflow-hidden shadow-elegant hover:shadow-subtle-glow dark:hover:border-vesper-accent/50 hover:border-vesper-orange/50 hover:scale-[1.03] transition-all duration-300 relative">
+                    <!-- Subtle Glow Overlay on Hover -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-vesper-accent/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    <div class="px-4 py-4 relative z-10">
+                        <!-- Title -->
+                        <h3 class="snippet-title text-lg font-semibold dark:text-white text-charcoal mb-3 line-clamp-1 hover:text-vesper-orange transition-colors duration-200">{{ snippet[1] }}</h3>
+                        
+                        <!-- Language and Author -->
+                        <div class="flex items-center space-x-2 mb-4">
+                            <span class="snippet-language px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-vesper-accent/30 to-vesper-orange/30 text-vesper-accent border border-vesper-accent/40 shadow-sm">
+                                {{ snippet[2] }}
+                            </span>
+                            <span class="author text-xs dark:text-ash/80 text-silver/80">
+                                by <a href="{{ url_for('user_profile', username=snippet[5]) }}" class="hover:text-vesper-orange transition-colors duration-200">{{ snippet[5] }}</a>
+                            </span>
+                            {% if snippet[4] %}
+                                <span class="text-xs dark:text-ash/60 text-silver/60">
+                                    {{ snippet[4].split(' ')[0] }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Description -->
+                        {% if snippet[3] %}
+                            <p class="snippet-description dark:text-ash/90 text-silver/90 text-sm line-clamp-2 mb-4 leading-relaxed">{{ snippet[3] }}</p>
+                        {% endif %}
+                        
+                        <!-- Actions -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <!-- Upvote -->
+                                <form action="{{ url_for('upvote_snippet', id=snippet[0]) }}" method="POST" class="inline">
+                                    <button type="submit" 
+                                            class="vote-btn text-sm font-medium text-green-400 hover:text-green-300 transition-all duration-200 flex items-center group">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 group-hover:scale-110 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span class="vote-count">{{ snippet[6] if snippet[6] else 0 }}</span>
+                                    </button>
+                                </form>
+                                <!-- Downvote -->
+                                <form action="{{ url_for('downvote_snippet', id=snippet[0]) }}" method="POST" class="inline">
+                                    <button type="submit" 
+                                            class="vote-btn text-sm font-medium text-red-400 hover:text-red-300 transition-all duration-200 flex items-center group">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 group-hover:scale-110 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span class="vote-count">{{ snippet[7] if snippet[7] else 0 }}</span>
+                                    </button>
+                                </form>
+                            </div>
+                            <!-- View Button -->
+                            <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}" 
+                               class="inline-flex items-center px-3 py-1 bg-gradient-to-r from-vesper-accent to-vesper-orange text-xs font-medium text-white rounded-full shadow-sm hover:shadow-subtle-glow hover:scale-105 transition-all duration-200">
+                                View
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-20 dark:bg-noir-light bg-cloud rounded-2xl border dark:border-gray-800 border-silver shadow-elegant">
+                <p class="text-lg dark:text-ash/80 text-silver/80 mb-6">No snippets have been shared yet.</p>
+                {% if 'user_id' in session %}
+                    <a href="{{ url_for('new_snippet') }}" 
+                       class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-vesper-accent to-royal-dark text-sm font-medium text-white rounded-xl shadow-elegant hover:shadow-subtle-glow hover:scale-105 transition-all duration-300">
+                        Share First Snippet
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" 
+                       class="inline-flex items-center px-6 py-3 border-2 border-vesper-orange text-sm font-medium dark:text-vesper-orange text-charcoal dark:hover:bg-vesper-orange dark:hover:text-charcoal hover:bg-vesper-orange hover:text-white rounded-xl shadow-elegant hover:shadow-subtle-glow transition-all duration-300">
+                        Login to Share Snippets
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/explore.js') }}"></script>
+{% endblock %}

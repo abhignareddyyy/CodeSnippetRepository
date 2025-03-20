@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CodeSnippetRepository{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Premium fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Animation libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Dark mode colors
+                        'noir': '#0F0F0F',
+                        'noir-light': '#171717',
+                        'graphite': '#262626',
+                        'white': '#FFFFFF',
+                        'ash': '#E5E5E5',
+                        
+                        // Earth-tone accent colors (replacing purple theme)
+                        'earth': '#C1BAA1',
+                        'earth-light': '#D7D3BF',
+                        'earth-dark': '#A09981',
+                        'sand': '#E5E1D0',
+                        'taupe': '#B0A990',
+                        
+                        // Light mode colors
+                        'pearl': '#F8F9FA',
+                        'cloud': '#E9ECEF',
+                        'silver': '#CED4DA',
+                        'charcoal': '#343A40',
+
+                        // Vesper colors (for new_snippet.html)
+                        'vesper-bg': '#1E293B',
+                        'vesper-fg': '#E2E8F0',
+                        'vesper-accent': '#C1BAA1',
+                        'vesper-orange': '#D7D3BF',
+
+                        // Profile page colors
+                        'dark-surface': '#1A1A1A',
+                        'dark-surface-2': '#222222',
+                        'amoled': '#000000',
+                        'accent': '#C1BAA1',
+                    },
+                    fontFamily: {
+                        'sans': ['Outfit', 'ui-sans-serif', 'system-ui'],
+                        'mono': ['JetBrains Mono', 'ui-monospace', 'monospace'],
+                    },
+                    boxShadow: {
+                        'elegant': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'subtle-glow': '0 0 15px rgba(193, 186, 161, 0.15)',
+                        'earth-glow': '0 0 25px rgba(193, 186, 161, 0.3)',
+                        'neon': '0 0 10px rgba(193, 186, 161, 0.5), 0 0 20px rgba(193, 186, 161, 0.3), 0 0 30px rgba(193, 186, 161, 0.1)',
+                    },
+                    keyframes: {
+                        shimmer: { '0%': { backgroundPosition: '-1000px 0' }, '100%': { backgroundPosition: '1000px 0' } },
+                        pulse: { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.5 } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } },
+                        fadeOut: { '0%': { opacity: 1 }, '100%': { opacity: 0 } },
+                        fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+                        bounce: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-20px)' } },
+                        spin: { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+                        wave: { '0%': { transform: 'rotate(0deg)' }, '20%': { transform: 'rotate(15deg)' }, '40%': { transform: 'rotate(-10deg)' }, '60%': { transform: 'rotate(5deg)' }, '80%': { transform: 'rotate(-5deg)' }, '100%': { transform: 'rotate(0deg)' } },
+                        typing: { '0%': { width: '0' }, '100%': { width: '100%' } },
+                        gradientMove: { '0%': { backgroundPosition: '0% 50%' }, '50%': { backgroundPosition: '100% 50%' }, '100%': { backgroundPosition: '0% 50%' } },
+                        morph: { '0%': { borderRadius: '60% 40% 30% 70%/60% 30% 70% 40%' }, '50%': { borderRadius: '30% 60% 70% 40%/50% 60% 30% 60%' }, '100%': { borderRadius: '60% 40% 30% 70%/60% 30% 70% 40%' } },
+                        reveal: { '0%': { clipPath: 'inset(0 100% 0 0)' }, '100%': { clipPath: 'inset(0 0 0 0)' } }
+                    },
+                    animation: {
+                        shimmer: 'shimmer 3s infinite linear',
+                        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        float: 'float 3s ease-in-out infinite',
+                        fadeOut: 'fadeOut 0.5s ease-out',
+                        fadeIn: 'fadeIn 0.5s ease-in',
+                        bounce: 'bounce 2s ease-in-out infinite',
+                        spin: 'spin 1.5s linear infinite',
+                        wave: 'wave 2s ease-in-out infinite',
+                        typing: 'typing 3.5s steps(40, end)',
+                        gradientMove: 'gradientMove 3s ease infinite',
+                        morph: 'morph 8s ease-in-out infinite',
+                        reveal: 'reveal 1.5s ease forwards'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="dark:bg-noir bg-pearl dark:text-white text-charcoal font-sans transition-colors duration-500">
+    <div class="cursor-follower"></div>
+    
+    <nav class="dark:bg-noir-light bg-white border-b dark:border-graphite border-silver sticky w-full top-0 z-50 transition-all duration-500 ease-in-out backdrop-blur-md dark:backdrop-blur-lg" id="mainNav">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="{{ url_for('home') }}" 
+                   class="text-xl font-mono font-medium dark:text-white text-charcoal hover:text-earth transition-colors duration-300 ease-in-out flex items-center relative">
+                    <div class="logo-icon mr-2 text-earth">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                    </div>
+                    <span class="mr-2">CodeSnippetRepository</span>
+                </a>
+
+                <div class="flex items-center space-x-5 nav-links">
+                    <a href="{{ url_for('explore') }}" 
+                       class="dark:text-white text-charcoal hover:text-earth px-3 py-2 text-sm rounded-md font-medium tracking-wide transition-all duration-300 nav-item magnetic-button">
+                        <span class="relative z-10">Explore</span>
+                    </a>
+                    {% if 'user_id' in session %}
+                        <a href="{{ url_for('new_snippet') }}" 
+                           class="dark:text-white text-earth hover:text-earth-light px-3 py-2 text-sm rounded-md font-medium tracking-wide transition-all duration-300 nav-item magnetic-button">
+                            <span class="relative z-10">New Snippet</span>
+                        </a>
+                        <a href="{{ url_for('profile') }}" 
+                           class="dark:text-white text-charcoal hover:text-earth px-3 py-2 text-sm rounded-md font-medium tracking-wide transition-all duration-300 nav-item magnetic-button">
+                            <span class="relative z-10">Profile</span>
+                        </a>
+                        <form action="{{ url_for('logout') }}" method="GET" class="inline">
+                            <button type="submit" 
+                                   class="dark:text-white text-charcoal hover:text-earth px-3 py-2 text-sm rounded-md font-medium tracking-wide transition-all duration-300 nav-item magnetic-button">
+                                <span class="relative z-10">Logout</span>
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" 
+                           class="dark:text-white text-charcoal hover:text-earth px-3 py-2 text-sm rounded-md font-medium tracking-wide transition-all duration-300 nav-item magnetic-button">
+                            <span class="relative z-10">Login</span>
+                        </a>
+                        <a href="{{ url_for('register') }}" 
+                           class="bg-earth text-white border border-earth hover:bg-earth-dark px-4 py-2 text-sm rounded-md font-medium tracking-wide transition-all duration-500 ease-in-out nav-item hover:shadow-earth-glow relative overflow-hidden group">
+                            <span class="relative z-10">Register</span>
+                            <span class="absolute inset-0 w-full h-full bg-gradient-to-r from-earth-dark to-earth-light opacity-0 group-hover:opacity-50 transition-opacity duration-500"></span>
+                        </a>
+                    {% endif %}
+                    
+                    <button id="theme-toggle" class="theme-toggle p-2 rounded-full focus:outline-none transition-transform duration-300 hover:scale-110">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:block hidden text-earth" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:hidden block text-earth" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-20 animate-fadeIn page-content relative z-10">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
+            <div class="page-transition-wrapper min-h-screen">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+
+    <style>
+        /* Ensure body and html allow scrolling */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+        }
+
+        /* Cursor follower */
+        .cursor-follower {
+            position: fixed;
+            background-color: rgba(193, 186, 161, 0.2);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease, width 0.3s ease, height 0.3s ease, background-color 0.3s ease;
+            mix-blend-mode: exclusion;
+            display: none;
+        }
+
+        /* Premium matte black scrollbar for dark mode */
+        .dark ::-webkit-scrollbar {
+            width: 10px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1A1A1A; /* Matte black track */
+            border-radius: 5px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #2D2D2D; /* Slightly lighter matte black thumb */
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #404040; /* Lighter matte black on hover */
+        }
+
+        /* Premium matte black scrollbar for light mode */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1A1A1A; /* Matte black track */
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2D2D2D; /* Slightly lighter matte black thumb */
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #404040; /* Lighter matte black on hover */
+        }
+
+        /* Magnetic buttons */
+        .magnetic-button {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .magnetic-button::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(193, 186, 161, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .magnetic-button:hover::after {
+            width: 200px;
+            height: 200px;
+        }
+
+        /* 3D Hover Effect */
+        .hover-3d {
+            transition: transform 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        /* Page transition wrapper */
+        .page-transition-wrapper {
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .page-exit {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .page-enter {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .page-enter-active, .page-exit-active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Inputs styling */
+        .dark input, .dark select, .dark textarea {
+            background-color: #171717;
+            color: #FFFFFF;
+            border: 1px solid #262626;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        input, select, textarea {
+            background-color: #FFFFFF;
+            color: #343A40;
+            border: 1px solid #CED4DA;
+            padding: 0.625rem 0.75rem;
+            border-radius: 0.25rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dark input:focus, .dark select:focus, .dark textarea:focus {
+            outline: none;
+            border-color: #C1BAA1;
+            box-shadow: 0 0 0 3px rgba(193, 186, 161, 0.2), 0 0 20px rgba(193, 186, 161, 0.1);
+            transform: translateY(-3px) scale(1.01);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #C1BAA1;
+            box-shadow: 0 0 0 3px rgba(193, 186, 161, 0.2), 0 0 20px rgba(193, 186, 161, 0.1);
+            transform: translateY(-3px) scale(1.01);
+        }
+
+        /* Input label animation */
+        .form-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            position: absolute;
+            left: 0.75rem;
+            top: 0.625rem;
+            color: #C1BAA1;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .form-group input:focus ~ label,
+        .form-group input:not(:placeholder-shown) ~ label,
+        .form-group textarea:focus ~ label,
+        .form-group textarea:not(:placeholder-shown) ~ label {
+            transform: translateY(-1.5rem) scale(0.85);
+            color: #D7D3BF;
+        }
+
+        /* Button styles with animations */
+        .btn-primary {
+            background-color: #C1BAA1;
+            color: #FFFFFF;
+            border: 1px solid #D7D3BF;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(193, 186, 161, 0.2), transparent);
+            transition: left 0.6s ease;
+            z-index: -1;
+        }
+
+        .btn-primary:hover {
+            border-color: #D7D3BF;
+            background-color: #A09981;
+            color: #FFFFFF;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(193, 186, 161, 0.2);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Theme toggle animation */
+        .theme-toggle {
+            transform-origin: center;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(45deg);
+            color: #D7D3BF;
+        }
+
+        /* Pulsing action button */
+        .btn-action {
+            position: relative;
+        }
+
+        .btn-action::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border-radius: inherit;
+            border: 1px solid #C1BAA1;
+            opacity: 0;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Morphing shapes animation */
+        .morphing-shape {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, #C1BAA1, #D7D3BF);
+            animation: morph 8s ease-in-out infinite;
+        }
+
+        /* Reveal text animation */
+        .reveal-text {
+            clip-path: inset(0 100% 0 0);
+            animation: reveal 1.5s ease forwards;
+            animation-delay: var(--delay, 0s);
+        }
+
+        /* Code blocks with animation */
+        .dark pre {
+            background-color: #0F0F0F;
+            border-left: 2px solid #C1BAA1;
+        }
+
+        pre {
+            background-color: #F8F9FA;
+            border-left: 2px solid #C1BAA1;
+            border-radius: 0.25rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        pre::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 40px;
+            background: linear-gradient(to right, transparent, var(--bg-color, #0F0F0F));
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .dark pre::before {
+            --bg-color: #0F0F0F;
+        }
+
+        pre::before {
+            --bg-color: #F8F9FA;
+        }
+
+        pre:hover {
+            box-shadow: 0 0 25px rgba(193, 186, 161, 0.15);
+            border-left-width: 4px;
+            transform: scale(1.01);
+        }
+
+        /* Line numbers in code blocks */
+        pre.with-line-numbers {
+            counter-reset: line;
+            padding-left: 3rem;
+        }
+
+        pre.with-line-numbers > code > span {
+            display: block;
+            position: relative;
+        }
+
+        pre.with-line-numbers > code > span::before {
+            counter-increment: line;
+            content: counter(line);
+            position: absolute;
+            left: -2.5rem;
+            color: #C1BAA1;
+            text-align: right;
+            width: 2rem;
+        }
+
+        /* Syntax highlighting animation */
+        .keyword { color: #C1BAA1; transition: all 0.3s ease; }
+        .string { color: #D7D3BF; transition: all 0.3s ease; }
+        .comment { color: #B0A990; transition: all 0.3s ease; }
+        .function { color: #A09981; transition: all 0.3s ease; }
+        .number { color: #E5E1D0; transition: all 0.3s ease; }
+
+        pre:hover .keyword { color: #D7D3BF; }
+        pre:hover .string { color: #B0A990; }
+        pre:hover .comment { color: #E5E1D0; }
+        pre:hover .function { color: #C1BAA1; }
+        pre:hover .number { color: #A09981; }
+
+        /* Card styling with animation */
+        .dark .elegant-card {
+            background-color: #171717;
+            border: 1px solid #262626;
+        }
+
+        .elegant-card {
+            background-color: #FFFFFF;
+            border-radius: 0.25rem;
+            border: 1px solid #CED4DA;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .elegant-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 0%, rgba(193, 186, 161, 0.1), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .elegant-card:hover {
+            border-color: #C1BAA1;
+            transform: translateY(-7px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1), 0 0 15px rgba(193, 186, 161, 0.1);
+        }
+
+        .elegant-card:hover::before {
+            opacity: 1;
+        }
+
+        .dark .elegant-card-header {
+            border-bottom: 1px solid #262626;
+        }
+
+        .elegant-card-header {
+            border-bottom: 1px solid #CED4DA;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .dark .elegant-card:hover .elegant-card-header {
+            background-color: rgba(193, 186, 161, 0.05);
+            border-bottom-color: rgba(193, 186, 161, 0.2);
+        }
+
+        .elegant-card:hover .elegant-card-header {
+            background-color: rgba(193, 186, 161, 0.05);
+            border-bottom-color: rgba(193, 186, 161, 0.2);
+        }
+
+        .elegant-card-body {
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .dark .elegant-card:hover .elegant-card-body {
+            background-color: rgba(193, 186, 161, 0.02);
+        }
+
+        .elegant-card:hover .elegant-card-body {
+            background-color: rgba(193, 186, 161, 0.02);
+        }
+
+        /* Card hover effect with 3D */
+        .card-hover-effect {
+            transition: transform 0.5s ease;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .card-hover-effect:hover {
+            transform: rotateY(5deg) rotateX(5deg) translateZ(10px);
+        }
+
+        /* Premium floating animation */
+        .premium-float {
+            animation: float 6s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        /* Custom premium spotlight effect */
+        .spotlight-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spotlight-effect::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(193, 186, 161, 0.3), transparent 70%);
+            pointer-events: none;
+            animation: spotlight 4s infinite ease-in-out;
+            z-index: -1;
+        }
+
+        @keyframes spotlight {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(50%, 50%); }
+            50% { transform: translate(100%, 100%); }
+            75% { transform: translate(50%, 0); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* Additional hover effects */
+        .hover-glow {
+            transition: box-shadow 0.3s ease;
+        }
+
+        .hover-glow:hover {
+            box-shadow: 0 0 20px rgba(193, 186, 161, 0.5);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .nav-links {
+                flex-direction: column;
+                align-items: flex-end;
+                gap: 1rem;
+                padding-top: 1rem;
+            }
+        }
+    </style>
+
+    <script>
+        // Register GSAP plugins
+        gsap.registerPlugin(ScrollTrigger, TextPlugin);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle functionality
+            const themeToggle = document.getElementById('theme-toggle');
+            const htmlElement = document.documentElement;
+
+            // Function to update theme based on class
+            function updateTheme() {
+                if (htmlElement.classList.contains('dark')) {
+                    htmlElement.classList.add('dark');
+                } else {
+                    htmlElement.classList.remove('dark');
+                }
+            }
+
+            // Load saved theme or system preference
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                htmlElement.classList.add('dark');
+            } else {
+                htmlElement.classList.remove('dark');
+            }
+
+            // Toggle theme on button click
+            themeToggle.addEventListener('click', () => {
+                htmlElement.classList.toggle('dark');
+                const isDarkMode = htmlElement.classList.contains('dark');
+                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            });
+
+            // Cursor follower effect
+            const cursorFollower = document.querySelector('.cursor-follower');
+            document.addEventListener('mousemove', (e) => {
+                cursorFollower.style.left = e.clientX + 'px';
+                cursorFollower.style.top = e.clientY + 'px';
+                cursorFollower.style.display = 'block';
+            });
+
+            document.addEventListener('mouseleave', () => {
+                cursorFollower.style.display = 'none';
+            });
+
+            // Magnetic button effect
+            const magneticButtons = document.querySelectorAll('.magnetic-button');
+            magneticButtons.forEach(button => {
+                button.addEventListener('mousemove', (e) => {
+                    const rect = button.getBoundingClientRect();
+                    const x = e.clientX - rect.left - rect.width / 2;
+                    const y = e.clientY - rect.top - rect.height / 2;
+                    button.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
+                });
+
+                button.addEventListener('mouseleave', () => {
+                    button.style.transform = 'translate(0, 0)';
+                });
+            });
+
+            // Particles.js configuration
+            if (typeof particlesJS !== 'undefined') {
+                particlesJS('particles-js', {
+                    particles: {
+                        number: { value: 60, density: { enable: true, value_area: 800 } },
+                        color: { value: "#C1BAA1" }, // Earth-tone color
+                        shape: { type: "circle", stroke: { width: 0, color: "#000000" }, polygon: { nb_sides: 5 } },
+                        opacity: { value: 0.1, random: true, anim: { enable: true, speed: 1, opacity_min: 0.05, sync: false } },
+                        size: { value: 3, random: true, anim: { enable: false, speed: 40, size_min: 0.1, sync: false } },
+                        line_linked: { enable: true, distance: 150, color: "#C1BAA1", opacity: 0.2, width: 1 }, // Earth-tone color
+                        move: { enable: true, speed: 2, direction: "none", random: true, straight: false, out_mode: "out", bounce: false, attract: { enable: false, rotateX: 600, rotateY: 1200 } }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: { onhover: { enable: true, mode: "grab" }, onclick: { enable: true, mode: "push" }, resize: true },
+                        modes: { grab: { distance: 140, line_linked: { opacity: 0.3 } }, bubble: { distance: 400, size: 40, duration: 2, opacity: 8, speed: 3 }, repulse: { distance: 200, duration: 0.4 }, push: { particles_nb: 4 }, remove: { particles_nb: 2 } }
+                    },
+                    retina_detect: true
+                });
+            }
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

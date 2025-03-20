@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+<style>
+    pre[class*="language-"] {
+        background: dark:bg-[#1E1E1E] bg-white !important;
+        margin: 0 !important;
+        padding: 1.5rem !important;
+        border-radius: 0 !important;
+    }
+    
+    code[class*="language-"] {
+        font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        font-size: 0.875rem !important;
+        line-height: 1.7 !important;
+        white-space: pre !important;
+        word-break: normal !important;
+        word-wrap: normal !important;
+        tab-size: 4 !important;
+    }
+
+    .token.comment,
+    .token.prolog,
+    .token.doctype,
+    .token.cdata {
+        color: #6A9955 !important;
+    }
+
+    .token.function { color: #DCDCAA !important; }
+    .token.keyword { color: #569CD6 !important; }
+    .token.string { color: #CE9178 !important; }
+    .token.number { color: #B5CEA8 !important; }
+    .token.operator { color: #D4D4D4 !important; }
+    .token.punctuation { color: #D4D4D4 !important; }
+    .token.class-name { color: #4EC9B0 !important; }
+    .token.constant { color: #4FC1FF !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Code Section -->
+        <div class="dark:bg-dark-surface-2 bg-white rounded-xl dark:border border-gray-800 border-silver overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-3 dark:bg-dark-surface bg-cloud dark:border-b border-gray-800 border-silver">
+                <div class="flex items-center justify-between w-full">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm font-medium dark:text-white text-charcoal">{{ snippet[3] }}</span>
+                        <span class="text-xs dark:text-gray-400 text-silver">{{ snippet[2] | length }} characters</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        {% if session['user_id'] == snippet[7] %}
+                        <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" 
+                           class="text-sm font-medium dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 transition-colors duration-200">
+                            Edit
+                        </a>
+                        <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" 
+                              method="POST" 
+                              class="inline delete-form">
+                            <button type="submit" 
+                                    class="text-sm font-medium dark:text-red-400 text-red-600 dark:hover:text-red-300 hover:text-red-800 transition-colors duration-200">
+                                Delete
+                            </button>
+                        </form>
+                        {% endif %}
+                        <button id="copy-button" 
+                                class="text-sm font-medium dark:text-white text-charcoal dark:hover:text-gray-300 hover:text-royal flex items-center transition-all duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto" id="code-container">
+                <pre class="p-6 m-0"><code id="codeBlock" class="language-{{ snippet[3] }} text-sm">{{ snippet[2] }}</code></pre>
+            </div>
+        </div>
+
+        <!-- Snippet Info -->
+        <div class="mt-8 dark:bg-dark-surface-2 bg-white rounded-xl dark:border border-gray-800 border-silver p-6">
+            <h1 class="text-2xl font-bold dark:text-white text-charcoal mb-4">{{ snippet[1] }}</h1>
+            {% if snippet[4] %}
+                <p class="dark:text-gray-400 text-silver mb-4">{{ snippet[4] }}</p>
+            {% endif %}
+            <div class="flex items-center justify-between text-sm dark:text-gray-400 text-silver">
+                <div class="flex items-center space-x-2">
+                    <span>Created by</span>
+                    <a href="{{ url_for('profile', username=snippet[6]) }}" 
+                       class="text-vesper-accent hover:text-vesper-orange transition-colors duration-200">
+                        {{ snippet[6] }}
+                    </a>
+                </div>
+                <span>{{ snippet[5].split(' ')[0] }}</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="mt-8 flex justify-between items-center">
+            <a href="{{ url_for('explore') }}" 
+               class="inline-flex items-center text-sm font-medium dark:text-gray-400 text-silver dark:hover:text-white hover:text-charcoal transition-colors duration-200">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                </svg>
+                Back to Explore
+            </a>
+            {% if session['user_id'] %}
+                <button id="share-button" 
+                        class="inline-flex items-center text-sm font-medium text-vesper-accent hover:text-vesper-orange transition-colors duration-200">
+                    <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                    </svg>
+                    Share
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="{{ url_for('static', filename='js/view_snippet.js') }}"></script>
+{% endblock %}

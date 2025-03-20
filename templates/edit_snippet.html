@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gray-100 dark:bg-dark-background">
+        <div class="max-w-6xl mx-auto">
+            <div class="bg-white dark:bg-dark-surface-2 rounded-lg p-8 shadow-elegant">
+                <h1 class="text-3xl font-bold dark:text-white text-gray-800 mb-8">
+                    Edit Snippet
+                </h1>
+
+                <form method="POST" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left Column: Snippet Details -->
+                    <div class="space-y-6">
+                        <!-- Title Input -->
+                        <div class="form-group">
+                            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Title
+                            </label>
+                            <input type="text"
+                                   id="title"
+                                   name="title"
+                                   value="{{ snippet[1] }}"
+                                   class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-dark-surface text-gray-800 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200"
+                                   required>
+                        </div>
+
+                        <!-- Language Selection -->
+                        <div class="form-group">
+                            <label for="language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Language
+                            </label>
+                            <select id="language"
+                                    name="language"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-dark-surface text-gray-800 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200">
+                                <option value="python" {% if snippet[3] == 'python' %}selected{% endif %}>Python</option>
+                                <option value="javascript" {% if snippet[3] == 'javascript' %}selected{% endif %}>JavaScript</option>
+                                <option value="html" {% if snippet[3] == 'html' %}selected{% endif %}>HTML</option>
+                                <option value="css" {% if snippet[3] == 'css' %}selected{% endif %}>CSS</option>
+                                <option value="sql" {% if snippet[3] == 'sql' %}selected{% endif %}>SQL</option>
+                                <!-- Add more languages as needed -->
+                            </select>
+                        </div>
+
+                        <!-- Code Editor (Moved to Right in Layout, but Temporarily Here for Structure) -->
+                        <div class="form-group lg:hidden">
+                            <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Code
+                            </label>
+                            <textarea id="code"
+                                      name="code"
+                                      class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-dark-surface text-gray-800 dark:text-white font-mono text-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 h-64 resize-y"
+                                      required>{{ snippet[2] }}</textarea>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="form-group">
+                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Description
+                            </label>
+                            <textarea id="description"
+                                      name="description"
+                                      class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-dark-surface text-gray-800 dark:text-white focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 h-32 resize-y"
+                                      required>{{ snippet[4] }}</textarea>
+                        </div>
+
+                        <!-- Privacy Toggle -->
+                        <div class="flex items-center space-x-4">
+                            <input type="checkbox"
+                                   id="is_private"
+                                   name="is_private"
+                                   {% if snippet[5] %}checked{% endif %}
+                                   class="w-5 h-5 text-pink-500 focus:ring-pink-500 border-gray-300 dark:border-gray-600 rounded">
+                            <label for="is_private" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Private Snippet
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Code Editor -->
+                    <div class="hidden lg:block">
+                        <div class="form-group">
+                            <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Code
+                            </label>
+                            <textarea id="code"
+                                      name="code"
+                                      class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-dark-surface text-gray-800 dark:text-white font-mono text-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 h-[calc(100%-2rem)] resize-none"
+                                      required>{{ snippet[2] }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="lg:col-span-2 flex justify-start space-x-4 mt-6">
+                        <button type="submit"
+                                class="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-all duration-300">
+                            Save Changes
+                        </button>
+                        <button type="button"
+                                onclick="window.location.href='{{ url_for('view_snippet', id=snippet[0]) }}'"
+                                class="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-all duration-300">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeEditor = document.getElementById('code');
+            const languageSelect = document.getElementById('language');
+
+            // Focus/blur effects for code editor
+            codeEditor.addEventListener('focus', function() {
+                codeEditor.classList.add('ring-2', 'ring-pink-500');
+            });
+            codeEditor.addEventListener('blur', function() {
+                codeEditor.classList.remove('ring-2', 'ring-pink-500');
+            });
+
+            // Language change handler
+            languageSelect.addEventListener('change', function() {
+                console.log(`Language changed to: ${this.value}`);
+                // Add syntax highlighting integration here (e.g., Prism.js)
+            });
+        });
+    </script>
+{% endblock %}

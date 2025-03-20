@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Profile Header with Stats -->
+        <div class="dark:bg-dark-surface-2 bg-white rounded-xl dark:border border-gray-800 border-silver mb-8">
+            <div class="px-8 py-6">
+                <h1 class="text-4xl font-extrabold dark:text-white text-charcoal mb-6">{{ user[1] }}</h1>
+                <div class="profile-stats flex flex-wrap gap-6">
+                    <div class="stat-box flex items-center space-x-2">
+                        <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ snippet_count }}</span>
+                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Snippets</span>
+                    </div>
+                    <div class="stat-box flex items-center space-x-2">
+                        <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ followers_count }}</span>
+                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Followers</span>
+                    </div>
+                    <div class="stat-box flex items-center space-x-2">
+                        <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ following_count }}</span>
+                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Following</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="mb-6">
+            <input type="text" 
+                   id="snippet-search" 
+                   placeholder="Search your snippets..." 
+                   class="w-full dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-2 dark:text-white text-charcoal placeholder-gray-500 dark:focus:border-accent focus:border-royal focus:ring-1 dark:focus:ring-accent focus:ring-royal focus:outline-none transition-colors duration-200">
+        </div>
+
+        <!-- Snippets Section -->
+        <h2 class="text-2xl font-bold dark:text-white text-charcoal mb-6">Your Snippets</h2>
+        
+        {% if snippets %}
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {% for snippet in snippets %}
+                <div class="snippet-card dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl overflow-hidden dark:hover:border-white/20 hover:border-royal/20 transition-all duration-200">
+                    <div class="px-6 py-5">
+                        <h3 class="snippet-title text-xl font-semibold dark:text-white text-charcoal mb-3">{{ snippet[1] }}</h3>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <span class="snippet-language px-3 py-1 rounded-full text-xs font-medium dark:bg-white/10 bg-royal/10 dark:text-white text-royal">
+                                {{ snippet[2] }}
+                            </span>
+                            <span class="text-xs dark:text-gray-400 text-silver">
+                                {{ snippet[3][:10] }}
+                            </span>
+                        </div>
+                        <div class="vote-stats flex space-x-4">
+                            <span class="upvotes dark:text-green-400 text-green-600">↑ {{ snippet[4] }}</span>
+                            <span class="downvotes dark:text-red-400 text-red-600">↓ {{ snippet[5] }}</span>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 dark:bg-dark-surface bg-cloud border-t dark:border-gray-800 border-silver">
+                        <div class="flex justify-end space-x-4">
+                            <a href="{{ url_for('view_snippet', id=snippet[0]) }}" 
+                               class="text-sm font-medium dark:text-white text-charcoal dark:hover:text-gray-300 hover:text-royal transition-colors duration-200">
+                                View
+                            </a>
+                            <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" 
+                               class="text-sm font-medium dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 transition-colors duration-200">
+                                Edit
+                            </a>
+                            <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" 
+                                  method="POST" 
+                                  class="inline delete-snippet-form">
+                                <button type="submit" 
+                                        class="text-sm font-medium dark:text-red-400 text-red-600 dark:hover:text-red-300 hover:text-red-800 transition-colors duration-200">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-16 dark:bg-dark-surface-2 bg-white rounded-xl dark:border border-gray-800 border-silver">
+                <p class="text-lg dark:text-gray-400 text-silver mb-6">You haven't created any snippets yet.</p>
+                <a href="{{ url_for('new_snippet') }}" 
+                   class="inline-flex items-center px-6 py-3 border-2 dark:border-white border-charcoal text-sm font-medium rounded-xl dark:text-white text-charcoal dark:hover:bg-white dark:hover:text-amoled hover:bg-charcoal hover:text-white transition-all duration-200">
+                    Create Your First Snippet
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.profile-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.stat-box {
+    display: flex;
+    align-items: center;
+    space-x-2;
+}
+
+.stat-number {
+    font-size: 1.125rem; /* 18px */
+    font-weight: 600;
+}
+
+.stat-label {
+    font-size: 0.875rem; /* 14px */
+}
+
+.vote-stats {
+    margin-bottom: 10px;
+}
+</style>
+
+<!-- Include the JavaScript file -->
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}
+{% endblock %}

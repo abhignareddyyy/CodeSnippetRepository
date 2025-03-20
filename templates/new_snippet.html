@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <div class="dark:bg-vesper-bg bg-cloud border-b dark:border-vesper-accent/20 border-silver py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold dark:text-vesper-fg text-charcoal">Create New Snippet</h1>
+            <button type="button" id="preview-toggle"
+                    class="inline-flex items-center px-4 py-2 border dark:border-vesper-accent/40 border-silver rounded-lg text-sm font-medium dark:text-vesper-fg text-charcoal hover:text-vesper-orange transition-colors duration-200 hover:shadow hover:bg-vesper-accent/10">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Preview
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex">
+        <form method="POST" id="snippet-form" action="{{ url_for('new_snippet') }}" class="flex w-full h-full">
+            <!-- Left Side: Form Fields -->
+            <div class="w-1/4 dark:bg-vesper-bg bg-white p-6 border-r dark:border-vesper-accent/20 border-silver space-y-6 shadow-sm overflow-y-auto">
+                <!-- Title -->
+                <div class="relative">
+                    <label for="title" class="block text-sm font-medium dark:text-vesper-fg text-charcoal">Title</label>
+                    <input type="text" name="title" id="title" required
+                           class="mt-1 block w-full dark:bg-vesper-bg bg-white border dark:border-vesper-accent/40 border-silver rounded-lg shadow-sm py-2 px-3 dark:text-vesper-fg text-charcoal focus:outline-none focus:ring-2 focus:ring-vesper-accent focus:border-transparent transition-all duration-200 hover:shadow-md"
+                           placeholder="Enter snippet title">
+                    <div class="text-xs text-red-400 mt-1 hidden validation-message"></div>
+                </div>
+
+                <!-- Language -->
+                <div class="relative">
+                    <label for="language" class="block text-sm font-medium dark:text-vesper-fg text-charcoal">Language</label>
+                    <select name="language" id="language" required
+                            class="mt-1 block w-full dark:bg-vesper-bg bg-white border dark:border-vesper-accent/40 border-silver rounded-lg shadow-sm py-2 px-3 dark:text-vesper-fg text-charcoal focus:outline-none focus:ring-2 focus:ring-vesper-accent focus:border-transparent transition-all duration-200 hover:shadow-md">
+                        <option value="" disabled selected>Select a language</option>
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="sql">SQL</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="csharp">C#</option>
+                        <option value="php">PHP</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="swift">Swift</option>
+                        <option value="kotlin">Kotlin</option>
+                        <option value="go">Go</option>
+                    </select>
+                    <div class="text-xs text-red-400 mt-1 hidden validation-message"></div>
+                </div>
+
+                <!-- Description -->
+                <div class="relative">
+                    <label for="description" class="block text-sm font-medium dark:text-vesper-fg text-charcoal">Description (optional)</label>
+                    <textarea name="description" id="description" rows="3"
+                              class="mt-1 block w-full dark:bg-vesper-bg bg-white border dark:border-vesper-accent/40 border-silver rounded-lg shadow-sm py-2 px-3 dark:text-vesper-fg text-charcoal focus:outline-none focus:ring-2 focus:ring-vesper-accent focus:border-transparent transition-all duration-200 hover:shadow-md"
+                              placeholder="Describe your code snippet"></textarea>
+                    <div class="text-xs dark:text-vesper-fg text-silver mt-1 flex justify-end">
+                        <span id="description-length">0</span>/200
+                    </div>
+                </div>
+
+                <!-- Private Checkbox and Submit Button -->
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="private" name="private"
+                               class="h-4 w-4 dark:bg-vesper-bg bg-white border-vesper-accent/40 rounded text-vesper-accent focus:ring-vesper-accent dark:focus:ring-offset-vesper-bg focus:ring-offset-white">
+                        <label for="private" class="text-sm dark:text-vesper-fg text-charcoal">Make snippet private</label>
+                    </div>
+                    <button type="submit" 
+                            class="inline-flex items-center px-6 py-3 bg-vesper-accent hover:bg-vesper-orange rounded-xl text-sm font-medium text-black dark:text-black transition-all duration-200 shadow hover:shadow-lg hover:-translate-y-1">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Create Snippet
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Side: Code Area -->
+            <div class="w-3/4 dark:bg-vesper-bg bg-white relative flex flex-col">
+                <!-- Header for Code Area -->
+                <div class="flex justify-between items-center px-6 py-3 border-b dark:border-vesper-accent/20 border-silver">
+                    <label for="code" class="block text-sm font-medium dark:text-vesper-fg text-charcoal">Code</label>
+                    <button type="button" id="format-code"
+                            class="text-xs text-vesper-accent hover:text-vesper-orange transition-colors duration-200">
+                        Format Code
+                    </button>
+                </div>
+                <!-- Hidden textarea for form submission -->
+                <textarea name="code" id="code" class="hidden"></textarea>
+                <!-- CodeMirror Editor -->
+                <div id="code-editor" class="flex-1 w-full border dark:border-vesper-accent/40 border-silver rounded-b-lg shadow-sm"></div>
+                <div class="text-xs text-red-400 mt-1 hidden validation-message"></div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="dark:bg-vesper-bg bg-white rounded-xl p-6 max-w-3xl w-full mx-4 transform transition-all duration-200 shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold dark:text-vesper-fg text-charcoal">Preview</h3>
+                <button id="close-preview" class="dark:text-vesper-fg text-charcoal hover:text-vesper-orange transition-colors duration-200">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="preview-content" class="space-y-4 dark:text-vesper-fg text-charcoal">
+                <!-- Preview content will be inserted here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- CodeMirror for Syntax Highlighting -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/php/php.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/ruby/ruby.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/swift/swift.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/go/go.min.js"></script>
+
+<!-- Prism.js for Preview Syntax Highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+
+<script src="{{ url_for('static', filename='js/new_snippet.js') }}"></script>
+{% endblock %}
