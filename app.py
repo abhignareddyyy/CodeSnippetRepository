@@ -228,7 +228,52 @@ def upload_profile_picture():
     flash('Invalid file type. Allowed types: png, jpg, jpeg, gif', 'error')
     return redirect(url_for('profile'))
 
-# Rest of your routes remain unchanged...
+#followers and following
+@app.route('/get_followers')
+def get_followers():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login first'}), 401
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    
+    followers = c.execute('''
+        SELECT u.username, 
+               (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count,
+               u.profile_picture
+        FROM users u
+        JOIN followers f ON u.id = f.follower_id
+        WHERE f.followed_id = ?
+    ''', (session['user_id'],)).fetchall()
+    
+    conn.close()
+    
+    return jsonify({
+        'followers': [{'username': f[0], 'snippet_count': f[1], 'profile_picture': f[2]} for f in followers]
+    })
+
+@app.route('/get_following')
+def get_following():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Please login first'}), 401
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    
+    following = c.execute('''
+        SELECT u.username, 
+               (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count,
+               u.profile_picture
+        FROM users u
+        JOIN followers f ON u.id = f.followed_id
+        WHERE f.follower_id = ?
+    ''', (session['user_id'],)).fetchall()
+    
+    conn.close()
+    
+    return jsonify({
+        'following': [{'username': f[0], 'snippet_count': f[1], 'profile_picture': f[2]} for f in following]
+    })
 
 @app.route('/explore')
 def explore():

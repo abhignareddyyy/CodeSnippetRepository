@@ -44,13 +44,13 @@
                         <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ snippet_count }}</span>
                         <span class="stat-label text-sm dark:text-gray-400 text-silver">Snippets</span>
                     </div>
-                    <div class="stat-box flex items-center space-x-2">
+                    <div class="stat-box flex items-center space-x-2 cursor-pointer" onclick="showFollowers()">
                         <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ followers_count }}</span>
-                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Followers</span>
+                        <span class="stat-label text-sm dark:text-gray-400 text-silver hover:underline">Followers</span>
                     </div>
-                    <div class="stat-box flex items-center space-x-2">
+                    <div class="stat-box flex items-center space-x-2 cursor-pointer" onclick="showFollowing()">
                         <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ following_count }}</span>
-                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Following</span>
+                        <span class="stat-label text-sm dark:text-gray-400 text-silver hover:underline">Following</span>
                     </div>
                     <!-- Premium Stats -->
                     <div class="stat-box flex items-center space-x-2">
@@ -250,4 +250,116 @@
         </div>
     </div>
 </div>
+
+<!-- Followers Modal -->
+<div id="followers-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-dark-surface-2 dark:border-gray-800">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold dark:text-white text-charcoal">Followers</h3>
+            <button id="close-followers" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="followers-list" class="space-y-4 max-h-96 overflow-y-auto">
+            <!-- Followers will be dynamically loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Following Modal -->
+<div id="following-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-dark-surface-2 dark:border-gray-800">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold dark:text-white text-charcoal">Following</h3>
+            <button id="close-following" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="following-list" class="space-y-4 max-h-96 overflow-y-auto">
+            <!-- Following will be dynamically loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+function showFollowers() {
+    fetch('/get_followers')
+        .then(response => response.json())
+        .then(data => {
+            const followersList = document.getElementById('followers-list');
+            followersList.innerHTML = '';
+            if (data.followers.length === 0) {
+                followersList.innerHTML = '<p class="text-sm dark:text-gray-400 text-silver text-center py-4">No followers yet.</p>';
+            } else {
+                data.followers.forEach(follower => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors';
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="h-10 w-10 rounded-full overflow-hidden">
+                                ${follower.profile_picture 
+                                    ? `<img src="/static/uploads/${follower.profile_picture}" alt="${follower.username}" class="h-full w-full object-cover">`
+                                    : '<div class="h-full w-full bg-gradient-to-br from-royal to-accent"></div>'
+                                }
+                            </div>
+                            <div>
+                                <a href="/user/${follower.username}" class="text-sm font-medium dark:text-white text-charcoal hover:underline">${follower.username}</a>
+                                <p class="text-xs dark:text-gray-400 text-silver">${follower.snippet_count} snippets</p>
+                            </div>
+                        </div>
+                    `;
+                    followersList.appendChild(div);
+                });
+            }
+            document.getElementById('followers-modal').classList.remove('hidden');
+        })
+        .catch(error => console.error('Error fetching followers:', error));
+}
+
+function showFollowing() {
+    fetch('/get_following')
+        .then(response => response.json())
+        .then(data => {
+            const followingList = document.getElementById('following-list');
+            followingList.innerHTML = '';
+            if (data.following.length === 0) {
+                followingList.innerHTML = '<p class="text-sm dark:text-gray-400 text-silver text-center py-4">Not following anyone yet.</p>';
+            } else {
+                data.following.forEach(following => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors';
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="h-10 w-10 rounded-full overflow-hidden">
+                                ${following.profile_picture 
+                                    ? `<img src="/static/uploads/${following.profile_picture}" alt="${following.username}" class="h-full w-full object-cover">`
+                                    : '<div class="h-full w-full bg-gradient-to-br from-royal to-accent"></div>'
+                                }
+                            </div>
+                            <div>
+                                <a href="/user/${following.username}" class="text-sm font-medium dark:text-white text-charcoal hover:underline">${following.username}</a>
+                                <p class="text-xs dark:text-gray-400 text-silver">${following.snippet_count} snippets</p>
+                            </div>
+                        </div>
+                    `;
+                    followingList.appendChild(div);
+                });
+            }
+            document.getElementById('following-modal').classList.remove('hidden');
+        })
+        .catch(error => console.error('Error fetching following:', error));
+}
+
+document.getElementById('close-followers').addEventListener('click', () => {
+    document.getElementById('followers-modal').classList.add('hidden');
+});
+
+document.getElementById('close-following').addEventListener('click', () => {
+    document.getElementById('following-modal').classList.add('hidden');
+});
+</script>
 {% endblock %}
