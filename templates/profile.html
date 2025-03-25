@@ -1,13 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen py-8">
+<div class="min-h-screen py-8 bg-gray-50 dark:bg-dark-surface">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Profile Header with Stats -->
-        <div class="dark:bg-dark-surface-2 bg-white rounded-xl dark:border border-gray-800 border-silver mb-8">
-            <div class="px-8 py-6">
-                <h1 class="text-4xl font-extrabold dark:text-white text-charcoal mb-6">{{ user[1] }}</h1>
-                <div class="profile-stats flex flex-wrap gap-6">
+        <!-- Premium Profile Header with Banner -->
+        <div class="dark:bg-dark-surface-2 bg-white rounded-xl shadow-lg dark:shadow-none dark:border border-gray-800 overflow-hidden mb-8">
+            <!-- Profile Banner (Premium Feature) -->
+            <div class="h-32 bg-gradient-to-r from-blue-600 to-purple-600 relative">
+                <!-- Premium Badge -->
+                <div class="absolute top-4 right-4 bg-amber-400 text-charcoal text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    PREMIUM
+                </div>
+            </div>
+            
+            <div class="px-8 py-6 relative">
+                <!-- Avatar with Profile Picture -->
+                <div class="absolute -top-12 left-8 rounded-full h-24 w-24 bg-white dark:bg-dark-surface-2 p-1 shadow-lg overflow-hidden">
+                    {% if profile_picture %}
+                        <img src="{{ url_for('static', filename='uploads/' + profile_picture) }}" alt="Profile Picture" class="h-full w-full object-cover rounded-full">
+                    {% else %}
+                        <div class="h-full w-full rounded-full bg-gradient-to-br from-royal to-accent"></div>
+                    {% endif %}
+                </div>
+                
+                <div class="ml-28">
+                    <h1 class="text-4xl font-extrabold dark:text-white text-charcoal">
+                        {{ user[1] }}
+                    </h1>
+                    <p class="text-sm dark:text-gray-400 text-silver mt-1">
+                        Member since {{ join_date[:10] if join_date else 'Unknown' }}
+                    </p>
+                    <!-- Profile Picture Upload Form -->
+                    <form action="{{ url_for('upload_profile_picture') }}" method="post" enctype="multipart/form-data" class="mt-2">
+                        <label for="profile_picture" class="text-sm dark:text-accent text-royal cursor-pointer hover:underline">
+                            Change Profile Picture
+                        </label>
+                        <input type="file" name="profile_picture" id="profile_picture" accept="image/*" class="hidden" onchange="this.form.submit()">
+                    </form>
+                </div>
+                
+                <div class="profile-stats flex flex-wrap gap-6 mt-6">
                     <div class="stat-box flex items-center space-x-2">
                         <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ snippet_count }}</span>
                         <span class="stat-label text-sm dark:text-gray-400 text-silver">Snippets</span>
@@ -20,105 +52,202 @@
                         <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ following_count }}</span>
                         <span class="stat-label text-sm dark:text-gray-400 text-silver">Following</span>
                     </div>
+                    <!-- Premium Stats -->
+                    <div class="stat-box flex items-center space-x-2">
+                        <span class="stat-number text-lg font-semibold text-amber-500">{{ snippet_views|default(0) }}</span>
+                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Total Views</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Search Bar -->
-        <div class="mb-6">
-            <input type="text" 
-                   id="snippet-search" 
-                   placeholder="Search your snippets..." 
-                   class="w-full dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-2 dark:text-white text-charcoal placeholder-gray-500 dark:focus:border-accent focus:border-royal focus:ring-1 dark:focus:ring-accent focus:ring-royal focus:outline-none transition-colors duration-200">
-        </div>
-
-        <!-- Snippets Section -->
-        <h2 class="text-2xl font-bold dark:text-white text-charcoal mb-6">Your Snippets</h2>
-        
-        {% if snippets %}
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {% for snippet in snippets %}
-                <div class="snippet-card dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl overflow-hidden dark:hover:border-white/20 hover:border-royal/20 transition-all duration-200">
-                    <div class="px-6 py-5">
-                        <h3 class="snippet-title text-xl font-semibold dark:text-white text-charcoal mb-3">{{ snippet[1] }}</h3>
-                        <div class="flex items-center space-x-3 mb-4">
-                            <span class="snippet-language px-3 py-1 rounded-full text-xs font-medium dark:bg-white/10 bg-royal/10 dark:text-white text-royal">
-                                {{ snippet[2] }}
-                            </span>
-                            <span class="text-xs dark:text-gray-400 text-silver">
-                                {{ snippet[3][:10] }}
-                            </span>
-                        </div>
-                        <div class="vote-stats flex space-x-4">
-                            <span class="upvotes dark:text-green-400 text-green-600">↑ {{ snippet[4] }}</span>
-                            <span class="downvotes dark:text-red-400 text-red-600">↓ {{ snippet[5] }}</span>
-                        </div>
+        <!-- Main Content Area -->
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Left Sidebar (Premium Feature) -->
+            <div class="w-full md:w-1/4">
+                <div class="dark:bg-dark-surface-2 bg-white rounded-xl shadow-md dark:shadow-none dark:border border-gray-800 p-6 mb-6">
+                    <h3 class="text-lg font-bold dark:text-white text-charcoal mb-4">Quick Actions</h3>
+                    <ul class="space-y-3">
+                        <li>
+                            <a href="{{ url_for('new_snippet') }}" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
+                                <span class="text-lg">+</span>
+                                <span>New Snippet</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
+                                <span class="text-lg">★</span>
+                                <span>Favorites</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
+                                <span class="text-lg">⚙</span>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
+                                <span class="text-lg">↗</span>
+                                <span>Share Profile</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Premium Feature: Popular Tags -->
+                <div class="dark:bg-dark-surface-2 bg-white rounded-xl shadow-md dark:shadow-none dark:border border-gray-800 p-6">
+                    <h3 class="text-lg font-bold dark:text-white text-charcoal mb-4">Your Top Tags</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">javascript</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">python</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">html</span>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">css</span>
                     </div>
-                    <div class="px-6 py-4 dark:bg-dark-surface bg-cloud border-t dark:border-gray-800 border-silver">
-                        <div class="flex justify-end space-x-4">
-                            <a href="{{ url_for('view_snippet', id=snippet[0]) }}" 
-                               class="text-sm font-medium dark:text-white text-charcoal dark:hover:text-gray-300 hover:text-royal transition-colors duration-200">
-                                View
-                            </a>
-                            <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" 
-                               class="text-sm font-medium dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 transition-colors duration-200">
-                                Edit
-                            </a>
-                            <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" 
-                                  method="POST" 
-                                  class="inline delete-snippet-form">
-                                <button type="submit" 
-                                        class="text-sm font-medium dark:text-red-400 text-red-600 dark:hover:text-red-300 hover:text-red-800 transition-colors duration-200">
-                                    Delete
-                                </button>
-                            </form>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="w-full md:w-3/4">
+                <!-- Search Bar with Premium Features -->
+                <div class="relative mb-6">
+                    <input type="text" 
+                           id="snippet-search" 
+                           placeholder="Search your snippets..." 
+                           class="w-full dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl pl-10 pr-4 py-3 dark:text-white text-charcoal placeholder-gray-500 dark:focus:border-accent focus:border-royal focus:ring-1 dark:focus:ring-accent focus:ring-royal focus:outline-none transition-colors shadow-sm">
+                    <div class="absolute left-3 top-3 text-gray-500">
+                        <!-- Search Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <!-- Premium Search Filters Button -->
+                    <div class="absolute right-3 top-3 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Premium Feature: Filters & Sort -->
+                <div class="flex flex-wrap justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold dark:text-white text-charcoal">Your Snippets</h2>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <select class="appearance-none dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-lg px-4 py-2 pr-8 text-sm dark:text-white text-charcoal focus:outline-none">
+                                <option>All Languages</option>
+                                <option>JavaScript</option>
+                                <option>Python</option>
+                                <option>HTML/CSS</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <div class="relative">
+                            <select class="appearance-none dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-lg px-4 py-2 pr-8 text-sm dark:text-white text-charcoal focus:outline-none">
+                                <option>Sort by Latest</option>
+                                <option>Most Popular</option>
+                                <option>Most Upvoted</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
-                {% endfor %}
+
+                <!-- Snippets Section with Premium Cards -->
+                {% if snippets %}
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        {% for snippet in snippets %}
+                        <div class="snippet-card dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl overflow-hidden shadow-md dark:shadow-none dark:hover:border-white/20 hover:border-royal/20 hover:shadow-lg transition-all duration-200">
+                            <div class="px-6 py-5">
+                                <h3 class="snippet-title text-xl font-semibold dark:text-white text-charcoal mb-3 line-clamp-1">{{ snippet[1] }}</h3>
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <span class="snippet-language px-3 py-1 rounded-full text-xs font-medium dark:bg-white/10 bg-royal/10 dark:text-white text-royal">
+                                        {{ snippet[2] }}
+                                    </span>
+                                    <span class="text-xs dark:text-gray-400 text-silver">
+                                        {{ snippet[3][:10] }}
+                                    </span>
+                                    <!-- Premium Feature: Views -->
+                                    <span class="text-xs dark:text-gray-400 text-silver ml-auto flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                        {{ snippet_views_map[snippet[0]]|default(0) }}
+                                    </span>
+                                </div>
+                                <div class="vote-stats flex space-x-4">
+                                    <span class="upvotes flex items-center dark:text-green-400 text-green-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                        {{ snippet[4] }}
+                                    </span>
+                                    <span class="downvotes flex items-center dark:text-red-400 text-red-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                        {{ snippet[5] }}
+                                    </span>
+                                    <!-- Premium Feature: Favorites -->
+                                    <span class="favorites flex items-center ml-auto cursor-pointer dark:text-amber-400 text-amber-600 hover:scale-110 transition-transform">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="px-6 py-4 dark:bg-dark-surface bg-cloud border-t dark:border-gray-800 border-silver">
+                                <div class="flex justify-between items-center">
+                                    <!-- Premium Feature: Code Preview -->
+                                    <div class="text-xs dark:text-gray-400 text-silver truncate w-24">
+                                        <code>{{ snippet[6]|default('// code preview')|truncate(20, true) }}</code>
+                                    </div>
+                                    <div class="flex space-x-4">
+                                        <a href="{{ url_for('view_snippet', id=snippet[0]) }}" 
+                                           class="text-sm font-medium dark:text-white text-charcoal dark:hover:text-gray-300 hover:text-royal transition-colors duration-200">
+                                            View
+                                        </a>
+                                        <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" 
+                                           class="text-sm font-medium dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 transition-colors duration-200">
+                                            Edit
+                                        </a>
+                                        <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" 
+                                              method="POST" 
+                                              class="inline delete-snippet-form">
+                                            <button type="submit" 
+                                                    class="text-sm font-medium dark:text-red-400 text-red-600 dark:hover:text-red-300 hover:text-red-800 transition-colors duration-200">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="py-12 px-6 dark:bg-dark-surface-2 bg-white rounded-xl shadow-md dark:shadow-none dark:border border-gray-800 border-silver text-left">
+                        <h3 class="text-xl font-bold dark:text-white text-charcoal mb-4">Start Your Collection</h3>
+                        <p class="text-base dark:text-gray-400 text-silver mb-6">You haven't created any snippets yet. Get started by creating your first snippet.</p>
+                        <a href="{{ url_for('new_snippet') }}" 
+                           class="inline-flex items-center px-6 py-3 border-2 dark:border-accent border-royal text-sm font-medium rounded-xl dark:text-accent text-royal dark:hover:bg-accent/10 hover:bg-royal/10 transition-colors duration-200">
+                            Create Your First Snippet
+                        </a>
+                    </div>
+                {% endif %}
             </div>
-        {% else %}
-            <div class="text-center py-16 dark:bg-dark-surface-2 bg-white rounded-xl dark:border border-gray-800 border-silver">
-                <p class="text-lg dark:text-gray-400 text-silver mb-6">You haven't created any snippets yet.</p>
-                <a href="{{ url_for('new_snippet') }}" 
-                   class="inline-flex items-center px-6 py-3 border-2 dark:border-white border-charcoal text-sm font-medium rounded-xl dark:text-white text-charcoal dark:hover:bg-white dark:hover:text-amoled hover:bg-charcoal hover:text-white transition-all duration-200">
-                    Create Your First Snippet
-                </a>
-            </div>
-        {% endif %}
+        </div>
     </div>
 </div>
-
-<style>
-.profile-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    margin-bottom: 24px;
-}
-
-.stat-box {
-    display: flex;
-    align-items: center;
-    space-x-2;
-}
-
-.stat-number {
-    font-size: 1.125rem; /* 18px */
-    font-weight: 600;
-}
-
-.stat-label {
-    font-size: 0.875rem; /* 14px */
-}
-
-.vote-stats {
-    margin-bottom: 10px;
-}
-</style>
-
-<!-- Include the JavaScript file -->
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
-{% endblock %}
 {% endblock %}
