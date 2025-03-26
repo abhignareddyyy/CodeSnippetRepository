@@ -6,7 +6,7 @@ def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
 
-    # Create users table with profile_picture column
+    # Create users table with additional columns
     c.execute('''
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,7 +14,12 @@ def init_db():
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        profile_picture TEXT DEFAULT NULL  -- Added profile picture column
+        profile_picture TEXT DEFAULT NULL,
+        bio TEXT DEFAULT NULL,
+        age INTEGER DEFAULT NULL,
+        dob TEXT DEFAULT NULL,
+        profession TEXT DEFAULT NULL,
+        profile_setup INTEGER DEFAULT 0
     )
     ''')
 
@@ -107,22 +112,26 @@ def migrate_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     
-    # Add views column to snippets if missing
-    c.execute("PRAGMA table_info(snippets)")
-    columns = [col[1] for col in c.fetchall()]
-    if 'views' not in columns:
-        c.execute('ALTER TABLE snippets ADD COLUMN views INTEGER DEFAULT 0')
-        print("Added 'views' column to snippets table.")
-    
-    # Add profile_picture column to users if missing
+    # Add columns to users table if they don't exist
     c.execute("PRAGMA table_info(users)")
     columns = [col[1] for col in c.fetchall()]
-    if 'profile_picture' not in columns:
-        c.execute('ALTER TABLE users ADD COLUMN profile_picture TEXT DEFAULT NULL')
-        print("Added 'profile_picture' column to users table.")
+    new_columns = {
+        'profile_picture': "TEXT DEFAULT NULL",
+        'bio': "TEXT DEFAULT NULL",
+        'age': "INTEGER DEFAULT NULL",
+        'dob': "TEXT DEFAULT NULL",
+        'profession': "TEXT DEFAULT NULL",
+        'profile_setup': "INTEGER DEFAULT 0"
+    }
+    
+    for column, col_type in new_columns.items():
+        if column not in columns:
+            c.execute(f'ALTER TABLE users ADD COLUMN {column} {col_type}')
+            print(f"Added '{column}' column to users table.")
     
     conn.commit()
     conn.close()
+    print("Database migration completed.")
 
 if __name__ == "__main__":
     init_db()

@@ -7,6 +7,7 @@ from database import init_db, migrate_db
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, Email
+import re
 
 app = Flask(__name__)
 app.secret_key = 'mykey1234'  # Change this to a secure secret key in production
@@ -148,6 +149,8 @@ def dashboard():
         return redirect(url_for('login'))
     return redirect(url_for('profile'))
 
+# ... (previous imports and code remain unchanged)
+
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
@@ -161,7 +164,7 @@ def profile():
                (SELECT COUNT(*) FROM followers WHERE followed_id = u.id) as followers_count,
                (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) as following_count,
                (SELECT COUNT(*) FROM snippets WHERE user_id = u.id) as snippets_count,
-               u.created_at, u.profile_picture
+               u.created_at, u.profile_picture, u.bio, u.age, u.dob, u.profession, u.profile_setup
         FROM users u 
         WHERE u.id = ?
     ''', (session['user_id'],)).fetchone()
@@ -192,7 +195,92 @@ def profile():
                          snippet_count=user[5],
                          join_date=user[6],
                          profile_picture=user[7],
+                         bio=user[8],
+                         age=user[9],
+                         dob=user[10],
+                         profession=user[11],
+                         profile_setup=user[12],
                          snippet_views_map=snippet_views_map)
+
+@app.route('/setup_profile', methods=['GET', 'POST'])
+def setup_profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    user = c.execute('SELECT profile_setup FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    
+    if user[0] == 1:  # Profile already set up
+        conn.close()
+        flash('Profile already set up. Edit via Settings.', 'info')
+        return redirect(url_for('profile'))
+    
+    if request.method == 'POST':
+        bio = request.form.get('bio')
+        age = request.form.get('age')
+        dob = request.form.get('dob')
+        profession = request.form.get('profession')
+        
+        # Basic validation
+        if not bio or len(bio) > 200:
+            flash('Bio is required and must be under 200 characters.', 'error')
+        elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
+            flash('Age must be a number between 13 and 120.', 'error')
+        elif dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
+            flash('Date of birth must be in YYYY-MM-DD format.', 'error')
+        else:
+            c.execute('''
+                UPDATE users 
+                SET bio = ?, age = ?, dob = ?, profession = ?, profile_setup = 1
+                WHERE id = ?
+            ''', (bio, int(age) if age else None, dob, profession, session['user_id']))
+            conn.commit()
+            conn.close()
+            flash('Profile set up successfully!', 'success')
+            return redirect(url_for('profile'))
+    
+    conn.close()
+    return render_template('setup_profile.html')
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    
+    if request.method == 'POST':
+        bio = request.form.get('bio')
+        age = request.form.get('age')
+        dob = request.form.get('dob')
+        profession = request.form.get('profession')
+        
+        # Validation
+        if not bio or len(bio) > 200:
+            flash('Bio is required and must be under 200 characters.', 'error')
+        elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
+            flash('Age must be a number between 13 and 120.', 'error')
+        elif dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
+            flash('Date of birth must be in YYYY-MM-DD format.', 'error')
+        else:
+            c.execute('''
+                UPDATE users 
+                SET bio = ?, age = ?, dob = ?, profession = ?
+                WHERE id = ?
+            ''', (bio, int(age) if age else None, dob, profession, session['user_id']))
+            conn.commit()
+            flash('Settings updated successfully!', 'success')
+            conn.close()
+            return redirect(url_for('profile'))
+    
+    user = c.execute('SELECT bio, age, dob, profession FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    conn.close()
+    
+    return render_template('settings.html', user=user)
+
+# ... (rest of your app.py remains unchanged)
 
 @app.route('/upload_profile_picture', methods=['POST'])
 def upload_profile_picture():

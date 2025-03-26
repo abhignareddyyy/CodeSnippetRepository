@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen py-8 bg-gray-50 dark:bg-dark-surface flex items-center justify-center">
+    <div class="max-w-md w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-dark-surface-2 rounded-xl shadow-lg dark:border border-gray-800 p-8">
+            <h1 class="text-3xl font-extrabold dark:text-white text-charcoal text-center mb-6">
+                Set Up Your Profile
+            </h1>
+            <p class="text-sm dark:text-gray-400 text-silver text-center mb-8">
+                Tell us a bit about yourself to complete your profile.
+            </p>
+
+            <form action="{{ url_for('setup_profile') }}" method="POST" class="space-y-6">
+                <!-- Bio -->
+                <div>
+                    <label for="bio" class="block text-sm font-medium dark:text-white text-charcoal">
+                        Bio
+                    </label>
+                    <textarea id="bio" 
+                              name="bio" 
+                              rows="4" 
+                              class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm" 
+                              placeholder="A little about yourself..."></textarea>
+                </div>
+
+                <!-- Age -->
+                <div>
+                    <label for="age" class="block text-sm font-medium dark:text-white text-charcoal">
+                        Age
+                    </label>
+                    <input type="number" 
+                           id="age" 
+                           name="age" 
+                           min="1" 
+                           max="150" 
+                           class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm" 
+                           placeholder="Your age">
+                </div>
+
+                <!-- Date of Birth -->
+                <div>
+                    <label for="dob" class="block text-sm font-medium dark:text-white text-charcoal">
+                        Date of Birth
+                    </label>
+                    <input type="date" 
+                           id="dob" 
+                           name="dob" 
+                           class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm">
+                </div>
+
+                <!-- Profession -->
+                <div>
+                    <label for="profession" class="block text-sm font-medium dark:text-white text-charcoal">
+                        Profession
+                    </label>
+                    <input type="text" 
+                           id="profession" 
+                           name="profession" 
+                           class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm" 
+                           placeholder="e.g., Software Developer">
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button type="submit" 
+                            class="inline-flex items-center px-6 py-3 bg-amber-400 text-charcoal text-sm font-medium rounded-xl hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 transition-colors duration-200">
+                        Save Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

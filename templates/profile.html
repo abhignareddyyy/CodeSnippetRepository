@@ -58,6 +58,29 @@
                         <span class="stat-label text-sm dark:text-gray-400 text-silver">Total Views</span>
                     </div>
                 </div>
+
+                <!-- Bio Section -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold dark:text-white text-charcoal">Bio</h3>
+                    <p class="text-sm dark:text-gray-400 text-silver mt-1">
+                        {{ bio if bio else "No bio set yet." }}
+                    </p>
+                </div>
+
+                <!-- Set Up Profile or Settings Button -->
+                <div class="mt-4">
+                    {% if not profile_setup_complete %}
+                        <a href="{{ url_for('setup_profile') }}" 
+                           class="inline-flex items-center px-6 py-3 bg-amber-400 text-charcoal text-sm font-medium rounded-xl hover:bg-amber-500 transition-colors duration-200">
+                            Set Up Profile
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('settings') }}" 
+                           class="text-sm dark:text-accent text-royal hover:underline">
+                            Edit Settings
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
@@ -81,7 +104,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
+                            <a href="{{ url_for('settings') }}" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
                                 <span class="text-lg">⚙</span>
                                 <span>Settings</span>
                             </a>
@@ -211,7 +234,7 @@
                                 <div class="flex justify-between items-center">
                                     <!-- Premium Feature: Code Preview -->
                                     <div class="text-xs dark:text-gray-400 text-silver truncate w-24">
-                                        <code>{{ snippet[6]|default('// code preview')|truncate(20, true) }}</code>
+                                        <code>{{ snippet['code']|default('// code preview')|truncate(20, true) }}</code>
                                     </div>
                                     <div class="flex space-x-4">
                                         <a href="{{ url_for('view_snippet', id=snippet[0]) }}" 
@@ -252,38 +275,49 @@
 </div>
 
 <!-- Followers Modal -->
-<div id="followers-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-dark-surface-2 dark:border-gray-800">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold dark:text-white text-charcoal">Followers</h3>
-            <button id="close-followers" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div id="followers-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-50 transition-opacity duration-300">
+    <div class="relative top-16 mx-auto p-8 w-full max-w-3xl bg-gradient-to-br from-gray-800 to-dark-surface-2 rounded-2xl shadow-2xl dark:border dark:border-gray-700">
+        <div class="flex justify-between items-center mb-8">
+            <h3 class="text-3xl font-extrabold text-white drop-shadow-lg">Followers</h3>
+            <button id="close-followers" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-        <div id="followers-list" class="space-y-4 max-h-96 overflow-y-auto">
+        <div id="followers-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 max-h-[70vh] overflow-y-auto">
             <!-- Followers will be dynamically loaded here -->
         </div>
     </div>
 </div>
 
 <!-- Following Modal -->
-<div id="following-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-dark-surface-2 dark:border-gray-800">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold dark:text-white text-charcoal">Following</h3>
-            <button id="close-following" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div id="following-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-50 transition-opacity duration-300">
+    <div class="relative top-16 mx-auto p-8 w-full max-w-3xl bg-gradient-to-br from-gray-800 to-dark-surface-2 rounded-2xl shadow-2xl dark:border dark:border-gray-700">
+        <div class="flex justify-between items-center mb-8">
+            <h3 class="text-3xl font-extrabold text-white drop-shadow-lg">Following</h3>
+            <button id="close-following" class="text-gray-400 hover:text-white transition-colors">
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-        <div id="following-list" class="space-y-4 max-h-96 overflow-y-auto">
+        <div id="following-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 max-h-[70vh] overflow-y-auto">
             <!-- Following will be dynamically loaded here -->
         </div>
     </div>
 </div>
+
+<style>
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .follower-card {
+        animation: fadeInUp 0.5s ease forwards;
+        animation-delay: calc(var(--index) * 0.1s);
+    }
+</style>
 
 <script>
 function showFollowers() {
@@ -293,29 +327,27 @@ function showFollowers() {
             const followersList = document.getElementById('followers-list');
             followersList.innerHTML = '';
             if (data.followers.length === 0) {
-                followersList.innerHTML = '<p class="text-sm dark:text-gray-400 text-silver text-center py-4">No followers yet.</p>';
+                followersList.innerHTML = '<p class="text-center text-lg text-gray-400 col-span-full py-8">No followers yet.</p>';
             } else {
-                data.followers.forEach(follower => {
+                data.followers.forEach((follower, index) => {
                     const div = document.createElement('div');
-                    div.className = 'flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors';
+                    div.className = 'follower-card flex flex-col items-center p-4 rounded-full bg-gray-900 bg-opacity-50 hover:bg-opacity-70 transition-all duration-300 transform hover:scale-105';
+                    div.style.setProperty('--index', index);
                     div.innerHTML = `
-                        <div class="flex items-center space-x-3">
-                            <div class="h-10 w-10 rounded-full overflow-hidden">
-                                ${follower.profile_picture 
-                                    ? `<img src="/static/uploads/${follower.profile_picture}" alt="${follower.username}" class="h-full w-full object-cover">`
-                                    : '<div class="h-full w-full bg-gradient-to-br from-royal to-accent"></div>'
-                                }
-                            </div>
-                            <div>
-                                <a href="/user/${follower.username}" class="text-sm font-medium dark:text-white text-charcoal hover:underline">${follower.username}</a>
-                                <p class="text-xs dark:text-gray-400 text-silver">${follower.snippet_count} snippets</p>
-                            </div>
+                        <div class="relative h-20 w-20 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-blue-500 to-purple-500 p-1 shadow-lg">
+                            ${follower.profile_picture 
+                                ? `<img src="/static/uploads/${follower.profile_picture}" alt="${follower.username}" class="h-full w-full object-cover rounded-full">`
+                                : '<div class="h-full w-full rounded-full bg-gradient-to-br from-royal to-accent"></div>'
+                            }
                         </div>
+                        <a href="/user/${follower.username}" class="mt-3 text-lg font-bold text-white drop-shadow-md hover:text-amber-400 transition-colors">${follower.username}</a>
+                        <p class="text-xs text-gray-400">${follower.snippet_count} snippets</p>
                     `;
                     followersList.appendChild(div);
                 });
             }
             document.getElementById('followers-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('followers-modal').classList.add('opacity-100'), 10);
         })
         .catch(error => console.error('Error fetching followers:', error));
 }
@@ -327,39 +359,39 @@ function showFollowing() {
             const followingList = document.getElementById('following-list');
             followingList.innerHTML = '';
             if (data.following.length === 0) {
-                followingList.innerHTML = '<p class="text-sm dark:text-gray-400 text-silver text-center py-4">Not following anyone yet.</p>';
+                followingList.innerHTML = '<p class="text-center text-lg text-gray-400 col-span-full py-8">Not following anyone yet.</p>';
             } else {
-                data.following.forEach(following => {
+                data.following.forEach((following, index) => {
                     const div = document.createElement('div');
-                    div.className = 'flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-surface transition-colors';
+                    div.className = 'follower-card flex flex-col items-center p-4 rounded-full bg-gray-900 bg-opacity-50 hover:bg-opacity-70 transition-all duration-300 transform hover:scale-105';
+                    div.style.setProperty('--index', index);
                     div.innerHTML = `
-                        <div class="flex items-center space-x-3">
-                            <div class="h-10 w-10 rounded-full overflow-hidden">
-                                ${following.profile_picture 
-                                    ? `<img src="/static/uploads/${following.profile_picture}" alt="${following.username}" class="h-full w-full object-cover">`
-                                    : '<div class="h-full w-full bg-gradient-to-br from-royal to-accent"></div>'
-                                }
-                            </div>
-                            <div>
-                                <a href="/user/${following.username}" class="text-sm font-medium dark:text-white text-charcoal hover:underline">${following.username}</a>
-                                <p class="text-xs dark:text-gray-400 text-silver">${following.snippet_count} snippets</p>
-                            </div>
+                        <div class="relative h-20 w-20 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-blue-500 to-purple-500 p-1 shadow-lg">
+                            ${following.profile_picture 
+                                ? `<img src="/static/uploads/${following.profile_picture}" alt="${following.username}" class="h-full w-full object-cover rounded-full">`
+                                : '<div class="h-full w-full rounded-full bg-gradient-to-br from-royal to-accent"></div>'
+                            }
                         </div>
+                        <a href="/user/${following.username}" class="mt-3 text-lg font-bold text-white drop-shadow-md hover:text-amber-400 transition-colors">${following.username}</a>
+                        <p class="text-xs text-gray-400">${following.snippet_count} snippets</p>
                     `;
                     followingList.appendChild(div);
                 });
             }
             document.getElementById('following-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('following-modal').classList.add('opacity-100'), 10);
         })
         .catch(error => console.error('Error fetching following:', error));
 }
 
 document.getElementById('close-followers').addEventListener('click', () => {
-    document.getElementById('followers-modal').classList.add('hidden');
+    document.getElementById('followers-modal').classList.remove('opacity-100');
+    setTimeout(() => document.getElementById('followers-modal').classList.add('hidden'), 300);
 });
 
 document.getElementById('close-following').addEventListener('click', () => {
-    document.getElementById('following-modal').classList.add('hidden');
+    document.getElementById('following-modal').classList.remove('opacity-100');
+    setTimeout(() => document.getElementById('following-modal').classList.add('hidden'), 300);
 });
 </script>
 {% endblock %}
