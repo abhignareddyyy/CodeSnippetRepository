@@ -19,7 +19,12 @@
                     {% if profile_picture %}
                         <img src="{{ url_for('static', filename='uploads/' + profile_picture) }}" alt="Profile Picture" class="h-full w-full object-cover rounded-full">
                     {% else %}
-                        <div class="h-full w-full rounded-full bg-gradient-to-br from-royal to-accent"></div>
+                        <!-- Default GitHub-like Avatar with Initials -->
+                        <div class="h-full w-full rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                            <span class="text-4xl font-bold text-gray-600 dark:text-gray-300">
+                                {{ user[1][0]|upper if user[1] else 'U' }}
+                            </span>
+                        </div>
                     {% endif %}
                 </div>
                 
@@ -337,7 +342,7 @@ function showFollowers() {
                         <div class="relative h-20 w-20 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-blue-500 to-purple-500 p-1 shadow-lg">
                             ${follower.profile_picture 
                                 ? `<img src="/static/uploads/${follower.profile_picture}" alt="${follower.username}" class="h-full w-full object-cover rounded-full">`
-                                : '<div class="h-full w-full rounded-full bg-gradient-to-br from-royal to-accent"></div>'
+                                : '<div class="h-full w-full rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"><span class="text-3xl font-bold text-gray-600 dark:text-gray-300">${follower.username[0].toUpperCase()}</span></div>'
                             }
                         </div>
                         <a href="/user/${follower.username}" class="mt-3 text-lg font-bold text-white drop-shadow-md hover:text-amber-400 transition-colors">${follower.username}</a>
@@ -369,7 +374,7 @@ function showFollowing() {
                         <div class="relative h-20 w-20 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-blue-500 to-purple-500 p-1 shadow-lg">
                             ${following.profile_picture 
                                 ? `<img src="/static/uploads/${following.profile_picture}" alt="${following.username}" class="h-full w-full object-cover rounded-full">`
-                                : '<div class="h-full w-full rounded-full bg-gradient-to-br from-royal to-accent"></div>'
+                                : '<div class="h-full w-full rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"><span class="text-3xl font-bold text-gray-600 dark:text-gray-300">${following.username[0].toUpperCase()}</span></div>'
                             }
                         </div>
                         <a href="/user/${following.username}" class="mt-3 text-lg font-bold text-white drop-shadow-md hover:text-amber-400 transition-colors">${following.username}</a>

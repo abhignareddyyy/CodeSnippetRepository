@@ -3,7 +3,18 @@
 {% block content %}
 <div class="profile-container">
     <div class="profile-header">
+        <div class="profile-picture">
+            {% if user.profile_picture %}
+                <img src="{{ url_for('static', filename='uploads/profile_pictures/' + user.profile_picture) }}" alt="{{ user[1] }}'s profile picture">
+            {% else %}
+                <img src="{{ url_for('static', filename='images/default_profile.png') }}" alt="Default profile picture">
+            {% endif %}
+        </div>
         <h1>{{ user[1] }}'s Profile</h1>
+        {% if user.bio %}
+            <p class="user-bio">{{ user.bio }}</p>
+        {% endif %}
+        
         {% if 'user_id' in session and session['user_id'] != user[0] %}
             <div class="follow-button-container">
                 {% if is_following %}
@@ -86,6 +97,32 @@
     margin-bottom: 40px;
 }
 
+/* Profile picture styles */
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    overflow: hidden;
+    border: 3px solid #3F4F44;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+.profile-picture img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* User bio styles */
+.user-bio {
+    max-width: 600px;
+    margin: 15px auto;
+    color: #666;
+    line-height: 1.5;
+    font-style: italic;
+}
+
 .follow-button-container {
     margin: 20px 0;
 }
@@ -99,21 +136,21 @@
 }
 
 .follow-button {
-    background: #2563eb;
+    background: #3F4F44;
     color: white;
     border: none;
 }
 
 .follow-button:hover {
-    background: #1d4ed8;
+    background: #4a5d50;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .unfollow-button {
     background: #fff;
-    color: #666;
-    border: 1px solid #ddd;
+    color: #3F4F44;
+    border: 1px solid #3F4F44;
 }
 
 .unfollow-button:hover {
@@ -134,13 +171,14 @@
     padding: 15px 25px;
     border-radius: 8px;
     text-align: center;
+    border: 1px solid rgba(63, 79, 68, 0.1);
 }
 
 .stat-number {
     display: block;
     font-size: 24px;
     font-weight: bold;
-    color: #333;
+    color: #3F4F44;
 }
 
 .stat-label {
@@ -169,6 +207,7 @@
 .snippet-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-color: #3F4F44;
 }
 
 .snippet-card h3 {
@@ -209,7 +248,7 @@
 .view-button {
     display: inline-block;
     padding: 8px 16px;
-    background: #2563eb;
+    background: #3F4F44;
     color: white;
     text-decoration: none;
     border-radius: 6px;
@@ -218,7 +257,7 @@
 }
 
 .view-button:hover {
-    background: #1d4ed8;
+    background: #4a5d50;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
