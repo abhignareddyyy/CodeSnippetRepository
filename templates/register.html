@@ -2,12 +2,12 @@
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 bg-dark-surface p-8 rounded-xl shadow-2xl border border-gray-800 transform transition-all duration-300 hover:shadow-accent/5">
+    <div class="max-w-lg w-full space-y-8 bg-dark-surface p-10 rounded-2xl shadow-2xl border border-gray-800 transform transition-all duration-300 hover:shadow-accent/5">
         <div>
-            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-100">
+            <h2 class="mt-6 text-center text-4xl font-extrabold text-gray-100">
                 Register
             </h2>
-            <p class="mt-2 text-center text-sm text-gray-400">
+            <p class="mt-2 text-center text-base text-gray-400">
                 Join our community of developers
             </p>
         </div>
@@ -22,10 +22,11 @@
             {% endif %}
         {% endwith %}
         
-        <form method="POST" action="{{ url_for('register') }}" class="space-y-6">
-            <div class="rounded-md shadow-sm -space-y-px">
-                <div class="relative transition-transform duration-200">
-                    <label for="username" class="absolute left-3 top-3 text-gray-500 text-sm transition-all duration-200">
+        <form method="POST" action="{{ url_for('register') }}" class="space-y-8">
+            <div class="rounded-md shadow-sm space-y-6">
+                <!-- Username Field -->
+                <div class="relative">
+                    <label for="username" class="block text-lg font-medium text-gray-400">
                         Username
                     </label>
                     <input id="username" 
@@ -33,22 +34,28 @@
                            type="text" 
                            required 
                            minlength="3"
-                           class="appearance-none rounded-t-xl relative block w-full px-3 pt-6 pb-2 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                           placeholder="Enter your username"
+                           class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-lg transition-all duration-200"
                            autocomplete="username">
                 </div>
-                <div class="relative transition-transform duration-200">
-                    <label for="email" class="absolute left-3 top-3 text-gray-500 text-sm transition-all duration-200">
+
+                <!-- Email Field -->
+                <div class="relative">
+                    <label for="email" class="block text-lg font-medium text-gray-400">
                         Email
                     </label>
                     <input id="email" 
                            name="email" 
                            type="email" 
                            required 
-                           class="appearance-none relative block w-full px-3 pt-6 pb-2 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                           placeholder="Enter your email"
+                           class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-lg transition-all duration-200"
                            autocomplete="email">
                 </div>
-                <div class="relative transition-transform duration-200">
-                    <label for="password" class="absolute left-3 top-3 text-gray-500 text-sm transition-all duration-200">
+
+                <!-- Password Field -->
+                <div class="relative">
+                    <label for="password" class="block text-lg font-medium text-gray-400">
                         Password
                     </label>
                     <input id="password" 
@@ -56,20 +63,24 @@
                            type="password" 
                            required 
                            minlength="6"
-                           class="appearance-none rounded-b-xl relative block w-full px-3 pt-6 pb-2 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                           placeholder="Enter your password"
+                           class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-lg transition-all duration-200"
                            autocomplete="new-password">
                 </div>
             </div>
 
+            <!-- Submit Button -->
             <div>
                 <button type="submit" 
-                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-dark focus:ring-offset-dark-surface transition-all duration-200 ease-in-out">
+                        class="group relative w-full flex justify-center py-4 px-6 border border-transparent text-lg font-medium rounded-xl text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-dark focus:ring-offset-dark-surface transition-all duration-200 ease-in-out">
                     Register
                 </button>
             </div>
         </form>
+
+        <!-- Login Link -->
         <div class="text-center">
-            <p class="text-sm text-gray-400">
+            <p class="text-base text-gray-400">
                 Already have an account? 
                 <a href="{{ url_for('login') }}" class="font-medium text-accent hover:text-accent-dark transition-colors duration-200">
                     Login here

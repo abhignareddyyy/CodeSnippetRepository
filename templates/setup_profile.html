@@ -1,70 +1,384 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen py-8 bg-gray-50 dark:bg-dark-surface flex items-center justify-center">
-    <div class="max-w-md w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-dark-surface-2 rounded-xl shadow-lg dark:border border-gray-800 p-8">
-            <h1 class="text-3xl font-extrabold dark:text-white text-charcoal text-center mb-6">
+<div class="min-h-screen py-12 bg-gray-50 dark:bg-dark-surface">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Profile Setup Header -->
+        <div class="mb-12 text-center">
+            <h1 class="text-4xl font-extrabold dark:text-white text-charcoal">
                 Set Up Your Profile
             </h1>
-            <p class="text-sm dark:text-gray-400 text-silver text-center mb-8">
-                Tell us a bit about yourself to complete your profile.
+            <p class="mt-2 text-lg dark:text-gray-400 text-silver">
+                Let’s get to know you better! Fill out the details below to personalize your profile.
             </p>
+        </div>
 
-            <form action="{{ url_for('setup_profile') }}" method="POST" class="space-y-6">
-                <!-- Bio -->
-                <div>
-                    <label for="bio" class="block text-sm font-medium dark:text-white text-charcoal">
-                        Bio
-                    </label>
-                    <textarea id="bio" 
-                              name="bio" 
-                              rows="4" 
-                              class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm" 
-                              placeholder="A little about yourself..."></textarea>
+        <!-- Profile Setup Form -->
+        <div class="dark:bg-dark-surface-2 bg-white rounded-2xl shadow-lg dark:shadow-none dark:border border-gray-800 p-8">
+            <form action="{{ url_for('setup_profile') }}" method="POST" class="space-y-8">
+                <!-- Personal Info Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Bio -->
+                    <div class="md:col-span-2">
+                        <label for="bio" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Bio
+                        </label>
+                        <textarea id="bio" 
+                                  name="bio" 
+                                  rows="4" 
+                                  class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg" 
+                                  placeholder="Tell us about yourself..."></textarea>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div>
+                        <label for="full_name" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Full Name
+                        </label>
+                        <input type="text" 
+                               id="full_name" 
+                               name="full_name" 
+                               class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg" 
+                               placeholder="e.g., Arjun Sharma">
+                    </div>
+
+                    <!-- Date of Birth -->
+                    <div>
+                        <label for="dob" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Date of Birth
+                        </label>
+                        <input type="date" 
+                               id="dob" 
+                               name="dob" 
+                               class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg">
+                    </div>
                 </div>
 
-                <!-- Age -->
-                <div>
-                    <label for="age" class="block text-sm font-medium dark:text-white text-charcoal">
-                        Age
-                    </label>
-                    <input type="number" 
-                           id="age" 
-                           name="age" 
-                           min="1" 
-                           max="150" 
-                           class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm" 
-                           placeholder="Your age">
+                <!-- Professional Info Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Status -->
+                    <div>
+                        <label for="status" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Status
+                        </label>
+                        <select id="status" 
+                                name="status" 
+                                class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg">
+                            <option value="" disabled selected>Select your status</option>
+                            <option value="student">Student</option>
+                            <option value="working_professional">Working Professional</option>
+                            <option value="freelancer">Freelancer</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Profession -->
+                    <div>
+                        <label for="profession" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Profession
+                        </label>
+                        <select id="profession" 
+                                name="profession" 
+                                class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg">
+                            <option value="" disabled selected>Select your profession</option>
+                            <option value="software_developer">Software Developer</option>
+                            <option value="data_scientist">Data Scientist</option>
+                            <option value="web_designer">Web Designer</option>
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="engineer">Engineer</option>
+                            <option value="marketing_specialist">Marketing Specialist</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Years of Experience -->
+                    <div>
+                        <label for="experience" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Years of Experience
+                        </label>
+                        <input type="number" 
+                               id="experience" 
+                               name="experience" 
+                               min="0" 
+                               max="50" 
+                               class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg" 
+                               placeholder="e.g., 3">
+                    </div>
+
+                    <!-- Education -->
+                    <div>
+                        <label for="education" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Highest Education
+                        </label>
+                        <select id="education" 
+                                name="education" 
+                                class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg">
+                            <option value="" disabled selected>Select your education</option>
+                            <option value="high_school">High School Diploma</option>
+                            <option value="associate">Associate Degree</option>
+                            <option value="bachelor">Bachelor’s Degree</option>
+                            <option value="master">Master’s Degree</option>
+                            <option value="phd">Ph.D.</option>
+                            <option value="certificate">Professional Certificate</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Date of Birth -->
+                <!-- Skills Section -->
                 <div>
-                    <label for="dob" class="block text-sm font-medium dark:text-white text-charcoal">
-                        Date of Birth
+                    <label for="skills" class="block text-lg font-medium dark:text-white text-charcoal">
+                        Skills
                     </label>
-                    <input type="date" 
-                           id="dob" 
-                           name="dob" 
-                           class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm">
+                    <select id="skills" 
+                            name="skills[]" 
+                            multiple 
+                            class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg" 
+                            size="5">
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="html_css">HTML/CSS</option>
+                        <option value="react">React</option>
+                        <option value="node">Node.js</option>
+                        <option value="sql">SQL</option>
+                        <option value="machine_learning">Machine Learning</option>
+                        <option value="web_design">Web Design</option>
+                        <option value="project_management">Project Management</option>
+                        <option value="communication">Communication</option>
+                    </select>
+                    <p class="mt-1 text-sm dark:text-gray-400 text-silver">
+                        Hold Ctrl (Windows) or Cmd (Mac) to select multiple skills.
+                    </p>
                 </div>
 
-                <!-- Profession -->
-                <div>
-                    <label for="profession" class="block text-sm font-medium dark:text-white text-charcoal">
-                        Profession
-                    </label>
-                    <input type="text" 
-                           id="profession" 
-                           name="profession" 
-                           class="mt-1 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-1 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm" 
-                           placeholder="e.g., Software Developer">
+                <!-- Additional Info Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Country -->
+                    <div>
+                        <label for="country" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Country
+                        </label>
+                        <select id="country" 
+                                name="country" 
+                                class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg">
+                            <option value="" disabled selected>Select your country</option>
+                            <option value="afghanistan">Afghanistan</option>
+                            <option value="albania">Albania</option>
+                            <option value="algeria">Algeria</option>
+                            <option value="andorra">Andorra</option>
+                            <option value="angola">Angola</option>
+                            <option value="antigua_and_barbuda">Antigua and Barbuda</option>
+                            <option value="argentina">Argentina</option>
+                            <option value="armenia">Armenia</option>
+                            <option value="australia">Australia</option>
+                            <option value="austria">Austria</option>
+                            <option value="azerbaijan">Azerbaijan</option>
+                            <option value="bahamas">Bahamas</option>
+                            <option value="bahrain">Bahrain</option>
+                            <option value="bangladesh">Bangladesh</option>
+                            <option value="barbados">Barbados</option>
+                            <option value="belarus">Belarus</option>
+                            <option value="belgium">Belgium</option>
+                            <option value="belize">Belize</option>
+                            <option value="benin">Benin</option>
+                            <option value="bhutan">Bhutan</option>
+                            <option value="bolivia">Bolivia</option>
+                            <option value="bosnia_and_herzegovina">Bosnia and Herzegovina</option>
+                            <option value="botswana">Botswana</option>
+                            <option value="brazil">Brazil</option>
+                            <option value="brunei">Brunei</option>
+                            <option value="bulgaria">Bulgaria</option>
+                            <option value="burkina_faso">Burkina Faso</option>
+                            <option value="burundi">Burundi</option>
+                            <option value="cabo_verde">Cabo Verde</option>
+                            <option value="cambodia">Cambodia</option>
+                            <option value="cameroon">Cameroon</option>
+                            <option value="canada">Canada</option>
+                            <option value="central_african_republic">Central African Republic</option>
+                            <option value="chad">Chad</option>
+                            <option value="chile">Chile</option>
+                            <option value="china">China</option>
+                            <option value="colombia">Colombia</option>
+                            <option value="comoros">Comoros</option>
+                            <option value="congo_democratic_republic">Congo, Democratic Republic of the</option>
+                            <option value="congo_republic">Congo, Republic of the</option>
+                            <option value="costa_rica">Costa Rica</option>
+                            <option value="croatia">Croatia</option>
+                            <option value="cuba">Cuba</option>
+                            <option value="cyprus">Cyprus</option>
+                            <option value="czechia">Czechia</option>
+                            <option value="denmark">Denmark</option>
+                            <option value="djibouti">Djibouti</option>
+                            <option value="dominica">Dominica</option>
+                            <option value="dominican_republic">Dominican Republic</option>
+                            <option value="ecuador">Ecuador</option>
+                            <option value="egypt">Egypt</option>
+                            <option value="el_salvador">El Salvador</option>
+                            <option value="equatorial_guinea">Equatorial Guinea</option>
+                            <option value="eritrea">Eritrea</option>
+                            <option value="estonia">Estonia</option>
+                            <option value="eswatini">Eswatini</option>
+                            <option value="ethiopia">Ethiopia</option>
+                            <option value="fiji">Fiji</option>
+                            <option value="finland">Finland</option>
+                            <option value="france">France</option>
+                            <option value="gabon">Gabon</option>
+                            <option value="gambia">Gambia</option>
+                            <option value="georgia">Georgia</option>
+                            <option value="germany">Germany</option>
+                            <option value="ghana">Ghana</option>
+                            <option value="greece">Greece</option>
+                            <option value="grenada">Grenada</option>
+                            <option value="guatemala">Guatemala</option>
+                            <option value="guinea">Guinea</option>
+                            <option value="guinea_bissau">Guinea-Bissau</option>
+                            <option value="guyana">Guyana</option>
+                            <option value="haiti">Haiti</option>
+                            <option value="holy_see">Holy See (Vatican City)</option>
+                            <option value="honduras">Honduras</option>
+                            <option value="hungary">Hungary</option>
+                            <option value="iceland">Iceland</option>
+                            <option value="india">India</option>
+                            <option value="indonesia">Indonesia</option>
+                            <option value="iran">Iran</option>
+                            <option value="iraq">Iraq</option>
+                            <option value="ireland">Ireland</option>
+                            <option value="israel">Israel</option>
+                            <option value="italy">Italy</option>
+                            <option value="jamaica">Jamaica</option>
+                            <option value="japan">Japan</option>
+                            <option value="jordan">Jordan</option>
+                            <option value="kazakhstan">Kazakhstan</option>
+                            <option value="kenya">Kenya</option>
+                            <option value="kiribati">Kiribati</option>
+                            <option value="korea_north">Korea, North</option>
+                            <option value="korea_south">Korea, South</option>
+                            <option value="kuwait">Kuwait</option>
+                            <option value="kyrgyzstan">Kyrgyzstan</option>
+                            <option value="laos">Laos</option>
+                            <option value="latvia">Latvia</option>
+                            <option value="lebanon">Lebanon</option>
+                            <option value="lesotho">Lesotho</option>
+                            <option value="liberia">Liberia</option>
+                            <option value="libya">Libya</option>
+                            <option value="liechtenstein">Liechtenstein</option>
+                            <option value="lithuania">Lithuania</option>
+                            <option value="luxembourg">Luxembourg</option>
+                            <option value="madagascar">Madagascar</option>
+                            <option value="malawi">Malawi</option>
+                            <option value="malaysia">Malaysia</option>
+                            <option value="maldives">Maldives</option>
+                            <option value="mali">Mali</option>
+                            <option value="malta">Malta</option>
+                            <option value="marshall_islands">Marshall Islands</option>
+                            <option value="mauritania">Mauritania</option>
+                            <option value="mauritius">Mauritius</option>
+                            <option value="mexico">Mexico</option>
+                            <option value="micronesia">Micronesia, Federated States of</option>
+                            <option value="moldova">Moldova</option>
+                            <option value="monaco">Monaco</option>
+                            <option value="mongolia">Mongolia</option>
+                            <option value="montenegro">Montenegro</option>
+                            <option value="morocco">Morocco</option>
+                            <option value="mozambique">Mozambique</option>
+                            <option value="myanmar">Myanmar</option>
+                            <option value="namibia">Namibia</option>
+                            <option value="nauru">Nauru</option>
+                            <option value="nepal">Nepal</option>
+                            <option value="netherlands">Netherlands</option>
+                            <option value="new_zealand">New Zealand</option>
+                            <option value="nicaragua">Nicaragua</option>
+                            <option value="niger">Niger</option>
+                            <option value="nigeria">Nigeria</option>
+                            <option value="north_macedonia">North Macedonia</option>
+                            <option value="norway">Norway</option>
+                            <option value="oman">Oman</option>
+                            <option value="pakistan">Pakistan</option>
+                            <option value="palau">Palau</option>
+                            <option value="palestine">Palestine, State of</option>
+                            <option value="panama">Panama</option>
+                            <option value="papua_new_guinea">Papua New Guinea</option>
+                            <option value="paraguay">Paraguay</option>
+                            <option value="peru">Peru</option>
+                            <option value="philippines">Philippines</option>
+                            <option value="poland">Poland</option>
+                            <option value="portugal">Portugal</option>
+                            <option value="qatar">Qatar</option>
+                            <option value="romania">Romania</option>
+                            <option value="russia">Russia</option>
+                            <option value="rwanda">Rwanda</option>
+                            <option value="saint_kitts_and_nevis">Saint Kitts and Nevis</option>
+                            <option value="saint_lucia">Saint Lucia</option>
+                            <option value="saint_vincent_and_the_grenadines">Saint Vincent and the Grenadines</option>
+                            <option value="samoa">Samoa</option>
+                            <option value="san_marino">San Marino</option>
+                            <option value="sao_tome_and_principe">São Tomé and Príncipe</option>
+                            <option value="saudi_arabia">Saudi Arabia</option>
+                            <option value="senegal">Senegal</option>
+                            <option value="serbia">Serbia</option>
+                            <option value="seychelles">Seychelles</option>
+                            <option value="sierra_leone">Sierra Leone</option>
+                            <option value="singapore">Singapore</option>
+                            <option value="slovakia">Slovakia</option>
+                            <option value="slovenia">Slovenia</option>
+                            <option value="solomon_islands">Solomon Islands</option>
+                            <option value="somalia">Somalia</option>
+                            <option value="south_africa">South Africa</option>
+                            <option value="south_sudan">South Sudan</option>
+                            <option value="spain">Spain</option>
+                            <option value="sri_lanka">Sri Lanka</option>
+                            <option value="sudan">Sudan</option>
+                            <option value="suriname">Suriname</option>
+                            <option value="sweden">Sweden</option>
+                            <option value="switzerland">Switzerland</option>
+                            <option value="syria">Syria</option>
+                            <option value="tajikistan">Tajikistan</option>
+                            <option value="tanzania">Tanzania</option>
+                            <option value="thailand">Thailand</option>
+                            <option value="timor_leste">Timor-Leste</option>
+                            <option value="togo">Togo</option>
+                            <option value="tonga">Tonga</option>
+                            <option value="trinidad_and_tobago">Trinidad and Tobago</option>
+                            <option value="tunisia">Tunisia</option>
+                            <option value="turkey">Turkey</option>
+                            <option value="turkmenistan">Turkmenistan</option>
+                            <option value="tuvalu">Tuvalu</option>
+                            <option value="uganda">Uganda</option>
+                            <option value="ukraine">Ukraine</option>
+                            <option value="united_arab_emirates">United Arab Emirates</option>
+                            <option value="united_kingdom">United Kingdom</option>
+                            <option value="united_states">United States</option>
+                            <option value="uruguay">Uruguay</option>
+                            <option value="uzbekistan">Uzbekistan</option>
+                            <option value="vanuatu">Vanuatu</option>
+                            <option value="venezuela">Venezuela</option>
+                            <option value="vietnam">Vietnam</option>
+                            <option value="yemen">Yemen</option>
+                            <option value="zambia">Zambia</option>
+                            <option value="zimbabwe">Zimbabwe</option>
+                        </select>
+                    </div>
+
+                    <!-- Website/Portfolio -->
+                    <div>
+                        <label for="website" class="block text-lg font-medium dark:text-white text-charcoal">
+                            Website or Portfolio
+                        </label>
+                        <input type="url" 
+                               id="website" 
+                               name="website" 
+                               class="mt-2 w-full dark:bg-dark-surface bg-white border dark:border-gray-800 border-silver rounded-xl px-4 py-3 dark:text-white text-charcoal placeholder-gray-500 focus:outline-none focus:ring-2 dark:focus:ring-accent focus:ring-royal dark:focus:border-accent focus:border-royal transition-colors shadow-sm text-lg" 
+                               placeholder="e.g., https://yourportfolio.com">
+                    </div>
                 </div>
 
                 <!-- Submit Button -->
                 <div class="text-center">
                     <button type="submit" 
-                            class="inline-flex items-center px-6 py-3 bg-amber-400 text-charcoal text-sm font-medium rounded-xl hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 transition-colors duration-200">
+                            class="inline-flex items-center px-8 py-4 bg-amber-400 text-charcoal text-lg font-semibold rounded-xl hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400 transition-colors duration-200">
                         Save Profile
                     </button>
                 </div>
