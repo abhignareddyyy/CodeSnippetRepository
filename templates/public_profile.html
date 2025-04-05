@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+
+{# --- Add Cal-Heatmap Resources to <head> or top of block --- #}
+{% block head_extra %}
+    {# Cal-Heatmap v4 CSS & JS via CDN (adjust version if needed) #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.5/dist/cal-heatmap.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.5/dist/cal-heatmap.min.js"></script>
+{% endblock %}
+
+
+{% block content %}
+{# --- Main Container - Wider --- #}
+<div class="profile-container-flat wider">
+
+    {# --- Profile Basic Info --- #}
+    <div class="profile-basic-info">
+        <div class="profile-image">
+            {% if user[4] %}
+                <img src="{{ url_for('static', filename='uploads/' + user[4]) }}" alt="{{ user[1] }}'s profile picture">
+            {% else %}
+                <div class="profile-avatar-placeholder">{{ user[1][0] | upper if user[1] else '?' }}</div>
+            {% endif %}
+        </div>
+        <div class="profile-identity">
+            <h1>{{ user[1] | default('Unknown User') }}</h1>
+            <p class="user-bio">{{ user[3] or "This user hasn't added a bio yet." }}</p>
+
+            {# --- Follow/Unfollow Button Container --- #}
+            {% if 'user_id' in session and session['user_id'] != user[0] %}
+                <div class="follow-button-container" id="follow-container">
+                    {% if is_following %}
+                        <button id="follow-toggle-button" onclick="toggleFollow('{{ user[1] }}')" class="unfollow-button" data-following="true">
+                            <span class="button-icon">✓</span> Following
+                        </button>
+                    {% else %}
+                        <button id="follow-toggle-button" onclick="toggleFollow('{{ user[1] }}')" class="follow-button" data-following="false">
+                            <span class="button-icon">+</span> Follow
+                        </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# --- Profile Stats --- #}
+    <div class="profile-stats">
+        {# Stats remain the same #}
+        <div class="stat-box">
+            <span class="stat-number">{{ stats[2] | default(0) }}</span>
+            <span class="stat-label">Snippets</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats[0] | default(0) }}</span>
+            <span class="stat-label">Followers</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats[1] | default(0) }}</span>
+            <span class="stat-label">Following</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-number">{{ stats[3] | default(0) }}</span>
+            <span class="stat-label">Total Upvotes</span>
+        </div>
+    </div>
+
+    {# --- Contribution Calendar Section --- #}
+    <div class="contribution-section">
+        <h2 class="contribution-heading">Contribution Activity</h2>
+        <div id="contribution-calendar">
+            <div class="calendar-loading">Loading activity...</div> {# Placeholder while loading #}
+        </div>
+         <div class="contribution-legend">
+            Less   {# Using   for non-breaking space #}
+            <span class="legend-box" style="background-color: var(--cal-color-L1);"></span>
+            <span class="legend-box" style="background-color: var(--cal-color-L2);"></span>
+            <span class="legend-box" style="background-color: var(--cal-color-L3);"></span>
+            <span class="legend-box" style="background-color: var(--cal-color-L4);"></span>
+              More
+        </div>
+    </div>
+
+    {# --- Snippets Section --- #}
+    <h2 class="snippets-heading">Public Snippets</h2>
+    {% if snippets %}
+        <ul class="snippet-list">
+            {# Snippet loop remains the same #}
+            {% for snippet in snippets %}
+            <li class="snippet-list-item">
+                <div class="snippet-list-main">
+                     <h3>
+                        <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}">
+                            {{ snippet[1] | default('Untitled Snippet') }}
+                        </a>
+                    </h3>
+                    <div class="snippet-meta">
+                        <span class="language">{{ snippet[2] | default('Unknown') }}</span>
+                        <span class="date">{{ snippet[3][:10] if snippet[3] else 'N/A' }}</span>
+                         <span class="views">{{ snippet_views_map[snippet[0]] | default(0) }} views</span>
+                    </div>
+                </div>
+                <div class="snippet-list-aside">
+                     <div class="vote-stats">
+                        <span class="upvotes">↑ {{ snippet[4] | default(0) }}</span>
+                        <span class="downvotes">↓ {{ snippet[5] | default(0) }}</span>
+                    </div>
+                     <div class="snippet-actions">
+                        <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}" class="view-button-small">
+                            View
+                        </a>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="no-snippets">
+           {# No snippets message remains the same #}
+           <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="no-snippets-icon">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+             </svg>
+            <p>{{ user[1] | default('This user') }} hasn't posted any public snippets yet.</p>
+        </div>
+    {% endif %}
+
+</div> {# End profile-container-flat #}
+
+
+<style>
+/* --- CSS Variables (Light & Dark Mode - Updated) --- */
+:root {
+    /* Light Theme */
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-accent: #2563eb;
+    --text-on-accent: #ffffff;
+    --text-placeholder: #94a3b8;
+    --border-color: #e2e8f0;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --success-color: #10b981;
+    --danger-color: #ef4444;
+    --lang-bg: #eef2ff;
+    --lang-text: #4338ca;
+
+    /* Calendar Colors (Light) */
+    --cal-bg: var(--bg-secondary);
+    --cal-text: var(--text-secondary);
+    --cal-border: var(--border-color);
+    --cal-day-bg: #ebedf0;       /* Base empty day */
+    --cal-day-border: var(--border-color); /* Tiny border */
+    --cal-color-L1: #c6e48b;     /* Example levels */
+    --cal-color-L2: #7bc96f;
+    --cal-color-L3: #239a3b;
+    --cal-color-L4: #196127;
+    --cal-tooltip-bg: #24292e;    /* Dark tooltip */
+    --cal-tooltip-text: #ffffff;
+
+    --primary-color: var(--text-accent);
+    --primary-hover: #1d4ed8;
+    --box-shadow: 0 2px 4px -1px var(--shadow-color), 0 1px 2px -1px var(--shadow-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Dark Theme */
+        --bg-primary: #111827;
+        --bg-secondary: #1f2937;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --text-accent: #3b82f6;
+        --text-on-accent: #ffffff;
+        --text-placeholder: #6b7280;
+        --border-color: #374151;
+        --shadow-color: rgba(0, 0, 0, 0.2);
+        --success-color: #34d399;
+        --danger-color: #f87171;
+        --lang-bg: #374151;
+        --lang-text: #9ca3af;
+
+        /* Calendar Colors (Dark) */
+        --cal-bg: var(--bg-secondary);
+        --cal-text: var(--text-secondary);
+        --cal-border: var(--border-color);
+        --cal-day-bg: #2d333b;      /* Dark empty day */
+        --cal-day-border: #444c56;
+        --cal-color-L1: #0e4429;     /* Darker green levels */
+        --cal-color-L2: #006d32;
+        --cal-color-L3: #26a641;
+        --cal-color-L4: #39d353;
+        --cal-tooltip-bg: #c9d1d9;    /* Light tooltip in dark mode */
+        --cal-tooltip-text: #1e293b;
+
+    }
+    img { filter: brightness(.9) contrast(1); }
+}
+
+/* --- General Styles --- */
+body { /* Styles as before */
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    transition: background-color 0.3s, color 0.3s;
+}
+a { /* Styles as before */
+    color: var(--text-accent);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+a:hover { text-decoration: underline; color: var(--primary-hover); }
+
+/* --- Flat Profile Container (WIDER) --- */
+.profile-container-flat.wider {
+    max-width: 1140px; /* << Increased Max Width */
+    margin: 32px auto;
+    padding: 0 24px;
+}
+
+/* --- Profile Basic Info & Stats (Styles as before) --- */
+.profile-basic-info { /* Styles as before */
+    display: flex; align-items: center; gap: 24px; margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--border-color);
+}
+.profile-image img, .profile-avatar-placeholder { /* Styles as before */
+     width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); background-color: var(--bg-secondary); box-shadow: var(--box-shadow);
+}
+.profile-avatar-placeholder { /* Styles as before */
+     display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; color: var(--text-accent);
+}
+.profile-identity h1 { /* Styles as before */
+    margin: 0 0 6px 0; font-size: 26px; font-weight: 700; color: var(--text-primary);
+}
+.user-bio { /* Styles as before */
+     margin: 0 0 12px 0; font-size: 15px; color: var(--text-secondary); line-height: 1.5; max-width: 600px;
+}
+.follow-button, .unfollow-button { /* Styles as before */
+    padding: 6px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; min-width: 110px; justify-content: center;
+}
+.follow-button { background: var(--text-accent); color: var(--text-on-accent); border-color: var(--text-accent);}
+.follow-button:hover { background: var(--primary-hover); border-color: var(--primary-hover);}
+.unfollow-button { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.unfollow-button:hover { background-color: var(--bg-primary); border-color: var(--text-secondary); }
+button.loading { opacity: 0.7; cursor: wait; }
+.profile-stats { /* Styles as before */
+    display: flex; justify-content: space-around; flex-wrap: wrap; gap: 16px; margin-bottom: 40px; padding: 20px 0;
+}
+.stat-box { /* Styles as before */
+    background: transparent; padding: 8px 12px; border-radius: 8px; text-align: center; min-width: 100px; border: none; transition: none;
+}
+.stat-number { display: block; font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.stat-label { font-size: 13px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+
+/* --- NEW: Contribution Calendar Styles --- */
+.contribution-section {
+    margin-bottom: 40px;
+    padding: 24px;
+    background-color: var(--cal-bg);
+    border: 1px solid var(--cal-border);
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+}
+
+.contribution-heading {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+#contribution-calendar {
+    /* Let the library control height/width, add min-height for loading */
+    min-height: 150px;
+    overflow-x: auto; /* Add scroll if needed */
+    padding-bottom: 10px; /* Space for scrollbar */
+}
+
+.calendar-loading {
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 40px 0;
+}
+
+/* Style the SVG elements generated by Cal-Heatmap using variables */
+.cal-heatmap-container .graph-rect { /* Day cells */
+    fill: var(--cal-day-bg);
+    stroke: var(--cal-day-border); /* Subtle border between days */
+    stroke-width: 1px;
+    rx: 2px; /* Slightly rounded corners for days */
+    ry: 2px;
+}
+
+/* Day cell colors based on data-level */
+.cal-heatmap-container .graph-rect[data-level='1'] { fill: var(--cal-color-L1); }
+.cal-heatmap-container .graph-rect[data-level='2'] { fill: var(--cal-color-L2); }
+.cal-heatmap-container .graph-rect[data-level='3'] { fill: var(--cal-color-L3); }
+.cal-heatmap-container .graph-rect[data-level='4'] { fill: var(--cal-color-L4); }
+
+.cal-heatmap-container .graph-label { /* Month/Day labels */
+    fill: var(--cal-text);
+    font-size: 10px;
+}
+.cal-heatmap-container .graph-subdomain-group { cursor: pointer; } /* Cursor for days */
+
+/* Cal-Heatmap Tooltip - Customize its appearance if needed */
+.ch-tooltip { /* Library default class */
+    background: var(--cal-tooltip-bg) !important; /* !important needed sometimes */
+    color: var(--cal-tooltip-text) !important;
+    border-radius: 4px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+    border: none !important;
+}
+.ch-tooltip strong {
+     color: var(--cal-tooltip-text) !important;
+     font-weight: 600 !important;
+}
+
+
+.contribution-legend {
+    margin-top: 16px;
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--cal-day-border);
+    border-radius: 2px;
+    vertical-align: middle;
+}
+
+/* --- Snippets Heading & List (Styles as before) --- */
+.snippets-heading { /* Styles as before */
+    margin-top: 0; font-size: 20px; font-weight: 600; margin-bottom: 24px; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;
+}
+.snippet-list { list-style: none; padding: 0; margin: 0; }
+.snippet-list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-color); gap: 16px; }
+.snippet-list-item:last-child { border-bottom: none; }
+.snippet-list-main { flex-grow: 1; }
+.snippet-list-aside { flex-shrink: 0; display: flex; align-items: center; gap: 20px; }
+.snippet-list-item h3 { margin: 0 0 8px 0; font-size: 17px; font-weight: 600; }
+.snippet-list-item h3 a { color: var(--text-primary); }
+.snippet-list-item h3 a:hover { color: var(--text-accent); }
+.snippet-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; color: var(--text-secondary); font-size: 13px; }
+.language { background-color: var(--lang-bg); color: var(--lang-text); padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.date, .views { color: var(--text-secondary); white-space: nowrap; }
+.vote-stats { display: flex; gap: 12px; color: var(--text-secondary); font-size: 14px; align-items: center; white-space: nowrap; }
+.upvotes { color: var(--success-color); font-weight: 500; display: inline-flex; align-items: center; }
+.downvotes { color: var(--danger-color); font-weight: 500; display: inline-flex; align-items: center; }
+.view-button-small { display: inline-block; padding: 5px 12px; background: var(--bg-secondary); color: var(--text-accent); text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500; transition: background-color 0.2s, color 0.2s, border-color 0.2s; text-align: center; border: 1px solid var(--border-color); white-space: nowrap; }
+.view-button-small:hover { background: var(--bg-primary); border-color: var(--text-accent); color: var(--text-accent); }
+.no-snippets { /* Styles as before */
+    text-align: center; color: var(--text-secondary); padding: 40px 20px; margin-top: 24px; border: 1px dashed var(--border-color); border-radius: 8px; display: flex; flex-direction: column; align-items: center; gap: 12px; background-color: var(--bg-secondary);
+}
+.no-snippets-icon { color: var(--text-placeholder); margin-bottom: 8px; }
+
+/* --- Responsive (Styles as before) --- */
+@media (max-width: 768px) { /* Styles as before, review width changes if needed */
+    .profile-container-flat.wider { max-width: 95%; padding: 0 16px; }
+    .profile-basic-info { flex-direction: column; text-align: center; padding-bottom: 24px; margin-bottom: 24px; gap: 16px; }
+    .profile-stats { justify-content: center; padding: 16px 0; gap: 20px; margin-bottom: 32px; }
+    .stat-box { min-width: calc(33% - 16px); padding: 8px; }
+    .snippet-list-item { flex-direction: column; align-items: flex-start; padding: 20px 0; }
+    .snippet-list-aside { margin-top: 12px; width: 100%; justify-content: space-between; }
+    .contribution-section { padding: 16px;} /* Less padding on mobile */
+}
+
+@media (max-width: 480px) { /* Styles as before */
+    .profile-image img, .profile-avatar-placeholder { width: 80px; height: 80px; font-size: 32px; }
+    .profile-identity h1 { font-size: 22px; }
+    .user-bio { font-size: 14px; }
+    .profile-stats { gap: 10px; flex-direction: column; align-items: center; }
+    .stat-box { width: 100%; min-width: auto; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+    .stat-box:last-child { border-bottom: none; }
+    .snippets-heading { font-size: 18px; margin-bottom: 16px; padding-bottom: 8px; }
+    .snippet-meta { font-size: 12px; gap: 8px; }
+    .vote-stats { font-size: 13px; gap: 8px; }
+    .view-button-small { padding: 4px 10px; font-size: 12px; }
+     .contribution-heading { font-size: 16px; }
+}
+</style>
+
+{# --- JavaScript Section --- #}
+<script>
+// --- toggleFollow function (as before) ---
+async function toggleFollow(username) {
+    const button = document.getElementById('follow-toggle-button');
+    if (!button || button.classList.contains('loading')) { return; }
+    const isCurrentlyFollowing = button.getAttribute('data-following') === 'true';
+    const actionUrl = isCurrentlyFollowing ? `/unfollow/${username}` : `/follow/${username}`;
+    button.classList.add('loading');
+    button.disabled = true;
+    try {
+        const response = await fetch(actionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            const wasFollowing = isCurrentlyFollowing;
+            button.setAttribute('data-following', String(!wasFollowing));
+            if (wasFollowing) {
+                button.classList.remove('unfollow-button');
+                button.classList.add('follow-button');
+                button.innerHTML = '<span class="button-icon">+</span> Follow';
+            } else {
+                button.classList.remove('follow-button');
+                button.classList.add('unfollow-button');
+                button.innerHTML = '<span class="button-icon">✓</span> Following';
+            }
+        } else {
+            console.error("Follow/Unfollow failed:", data.message);
+            alert(`Action failed: ${data.message || 'Please try again.'}`);
+        }
+    } catch (error) {
+        console.error('Network or JS error:', error);
+        alert('An error occurred. Please check your connection and try again.');
+    } finally {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+// --- NEW: Initialize Contribution Calendar ---
+document.addEventListener('DOMContentLoaded', function() {
+    const calContainer = document.getElementById('contribution-calendar');
+        // Get username from the template (passed from Flask) - using tojson | safe for JS embedding
+        const profileUsername = {{ profile_username | tojson | safe }};
+
+    if (calContainer && profileUsername) {
+        fetch(`/api/user/${profileUsername}/contributions`)
+            .then(response => {
+                if (!response.ok) { throw new Error(`HTTP error! Status: ${response.status}`); }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.contributions) {
+                    // Clear loading message
+                    calContainer.innerHTML = '';
+
+                    // Data needs to be {timestamp: value} for cal-heatmap <=3
+                    // OR {date: value} for v4 where date is JS Date or 'YYYY-MM-DD'
+                    const heatmapData = {};
+                    for (const [dateStr, count] of Object.entries(data.contributions)) {
+                       // Assuming dateStr is 'YYYY-MM-DD', cal-heatmap v4 should handle it
+                       heatmapData[dateStr] = count;
+                    }
+
+                    const cal = new CalHeatmap();
+                    cal.paint({
+                        data: { // Data configuration for v4
+                           source: heatmapData,
+                           type: 'json', // Indicate source type if needed, not strictly required for object
+                           x: 'date', // Assuming keys are dates
+                           y: 'count' // Assuming values are counts (cal-heatmap v4 automatically maps value to color level)
+                         },
+                        date: { // Date configuration
+                             start: new Date(new Date().setFullYear(new Date().getFullYear() - 1)), // Start 1 year ago
+                             // locale: 'en' // Set locale if needed
+                         },
+                         range: 12, // Show 12 months
+                         scale: { // Color scale configuration
+                           color: {
+                              // Scheme to use: e.g., 'Green', 'Github' - need to map vars or use theme
+                              // Alternatively define specific colors for levels:
+                                type: 'threshold', // Use threshold for specific levels
+                                domain: [1, 3, 6, 10], // Count thresholds for colors L1-L4 (adjust these values)
+                                range: [
+                                    getComputedStyle(document.documentElement).getPropertyValue('--cal-color-L1').trim(),
+                                    getComputedStyle(document.documentElement).getPropertyValue('--cal-color-L2').trim(),
+                                    getComputedStyle(document.documentElement).getPropertyValue('--cal-color-L3').trim(),
+                                    getComputedStyle(document.documentElement).getPropertyValue('--cal-color-L4').trim()
+                                ], // Colors from CSS variables
+                                // Base color for 0 count is handled by CSS variable --cal-day-bg
+                            }
+                         },
+                        domain: { // Domain setup (months)
+                             type: 'month',
+                             padding: [10, 10, 10, 10], // Padding around months [top, right, bottom, left]
+                             label: { text: 'MMM', textAlign: 'start', position: 'top' }, // Month label format (e.g., 'Jan')
+                             gutter: 5 // Space between domains
+                         },
+                         subDomain: { // Subdomain setup (days)
+                             type: 'day',
+                             width: 12, // Width of a day cell
+                             height: 12, // Height of a day cell
+                             radius: 2, // Rounded corners for days
+                             gutter: 3 // Space between days
+                         },
+                        itemSelector: '#contribution-calendar', // Target the div
+                         // Optional: Tooltip customization
+                         // Format needs v4 specifics if available, using default for now
+                    });
+                } else {
+                    calContainer.innerHTML = `<div class="calendar-loading error">${data.error || 'Could not load activity data.'}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching contributions:', error);
+                calContainer.innerHTML = `<div class="calendar-loading error">Error loading activity chart.</div>`;
+            });
+    }
+});
+</script>
+
+{% endblock %}

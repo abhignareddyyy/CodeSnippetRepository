@@ -8,6 +8,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, Email
 import re
+from datetime import datetime, timedelta  # Added datetime import
 
 app = Flask(__name__)
 app.secret_key = 'mykey1234'  # Change this to a secure secret key in production
@@ -16,6 +17,7 @@ app.secret_key = 'mykey1234'  # Change this to a secure secret key in production
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB limit
 
 # Ensure the upload folder exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -33,6 +35,39 @@ class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
     submit = SubmitField('Sign in')
+
+# --- NEW API ROUTE FOR CONTRIBUTIONS ---
+@app.route('/api/user/<username>/contributions')
+def get_user_contributions(username):
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    user = c.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
+
+    if not user:
+        conn.close()
+        return jsonify({"success": False, "error": "User not found"}), 404
+
+    user_id = user[0]
+
+    # Get contributions for the last year
+    one_year_ago = datetime.now() - timedelta(days=365)
+    one_year_ago_str = one_year_ago.strftime('%Y-%m-%d %H:%M:%S')
+
+    contributions = c.execute('''
+        SELECT strftime('%Y-%m-%d', created_at) as date, COUNT(id) as count
+        FROM snippets
+        WHERE user_id = ? AND is_private = 0 AND created_at >= ?
+        GROUP BY date
+        ORDER BY date ASC
+    ''', (user_id, one_year_ago_str)).fetchall()
+
+    conn.close()
+
+    contribution_data = {row[0]: row[1] for row in contributions}
+
+    return jsonify({"success": True, "contributions": contribution_data})
+# --- END NEW API ROUTE ---
 
 @app.route('/')
 def home():
@@ -143,64 +178,61 @@ def login():
     
     return render_template('login.html', form=form)
 
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return redirect(url_for('profile'))
-
-# ... (previous imports and code remain unchanged)
-
 @app.route('/profile')
 def profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
+
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    
+
     user = c.execute('''
         SELECT u.id, u.username, u.email,
                (SELECT COUNT(*) FROM followers WHERE followed_id = u.id) as followers_count,
                (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) as following_count,
                (SELECT COUNT(*) FROM snippets WHERE user_id = u.id) as snippets_count,
                u.created_at, u.profile_picture, u.bio, u.age, u.dob, u.profession, u.profile_setup
-        FROM users u 
+        FROM users u
         WHERE u.id = ?
     ''', (session['user_id'],)).fetchone()
-    
+
+    # --- >>> CORRECTED SQL QUERY FOR SNIPPETS <<< ---
     snippets = c.execute('''
         SELECT id, title, language, created_at,
                (SELECT COUNT(*) FROM votes WHERE snippet_id = snippets.id AND vote_type = 'up') as upvotes,
+               -- Corrected the table name in the subquery below from snippets to votes
                (SELECT COUNT(*) FROM votes WHERE snippet_id = snippets.id AND vote_type = 'down') as downvotes,
                code, views
-        FROM snippets 
-        WHERE user_id = ? 
+        FROM snippets
+        WHERE user_id = ?
         ORDER BY created_at DESC
     ''', (session['user_id'],)).fetchall()
-    
-    snippet_views_map = {snippet[0]: snippet[7] for snippet in snippets}
-    
+    # --- >>> END OF CORRECTION <<< ---
+
+    # Create the map using the correct index for views (now index 7 after adding code)
+    # Query result indexes: 0:id, 1:title, 2:language, 3:created_at, 4:upvotes, 5:downvotes, 6:code, 7:views
+    snippet_views_map = {snippet[0]: snippet[7] for snippet in snippets} # views is at index 7
+
     conn.close()
-    
+
     if user is None:
-        session.clear()
+        session.clear() # User not found, clear session
         return redirect(url_for('login'))
-        
-    return render_template('profile.html', 
-                         user=user, 
-                         snippets=snippets,
+
+    # Ensure all needed variables are passed to the template
+    return render_template('profile.html',
+                         user=user,                      # The user tuple
+                         snippets=snippets,              # List of snippet tuples
                          followers_count=user[3],
                          following_count=user[4],
                          snippet_count=user[5],
                          join_date=user[6],
-                         profile_picture=user[7],
-                         bio=user[8],
-                         age=user[9],
-                         dob=user[10],
-                         profession=user[11],
-                         profile_setup=user[12],
-                         snippet_views_map=snippet_views_map)
+                         profile_picture=user[7],        # Correct index for profile_picture
+                         bio=user[8],                    # Correct index for bio
+                         # age=user[9], dob=user[10], profession=user[11], # Only needed if used in template
+                         profile_setup=(user[12] == 1),  # Pass boolean for easier checking in template
+                         snippet_views_map=snippet_views_map
+                        )
 
 @app.route('/setup_profile', methods=['GET', 'POST'])
 def setup_profile():
@@ -209,9 +241,10 @@ def setup_profile():
     
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    user = c.execute('SELECT profile_setup FROM users WHERE id = ?', (session['user_id'],)).fetchone()
     
-    if user[0] == 1:  # Profile already set up
+    user = c.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    
+    if user[12] == 1:  # Profile already set up
         conn.close()
         flash('Profile already set up. Edit via Settings.', 'info')
         return redirect(url_for('profile'))
@@ -222,7 +255,14 @@ def setup_profile():
         dob = request.form.get('dob')
         profession = request.form.get('profession')
         
-        # Basic validation
+        if 'profile_picture' in request.files:
+            file = request.files['profile_picture']
+            if file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(f"{session['user_id']}_{file.filename}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                c.execute('UPDATE users SET profile_picture = ? WHERE id = ?', 
+                         (filename, session['user_id']))
+        
         if not bio or len(bio) > 200:
             flash('Bio is required and must be under 200 characters.', 'error')
         elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
@@ -241,7 +281,7 @@ def setup_profile():
             return redirect(url_for('profile'))
     
     conn.close()
-    return render_template('setup_profile.html')
+    return render_template('setup_profile.html', user=user)
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
@@ -257,7 +297,14 @@ def settings():
         dob = request.form.get('dob')
         profession = request.form.get('profession')
         
-        # Validation
+        if 'profile_picture' in request.files:
+            file = request.files['profile_picture']
+            if file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(f"{session['user_id']}_{file.filename}")
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                c.execute('UPDATE users SET profile_picture = ? WHERE id = ?', 
+                         (filename, session['user_id']))
+        
         if not bio or len(bio) > 200:
             flash('Bio is required and must be under 200 characters.', 'error')
         elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
@@ -275,12 +322,10 @@ def settings():
             conn.close()
             return redirect(url_for('profile'))
     
-    user = c.execute('SELECT bio, age, dob, profession FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    user = c.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
     conn.close()
     
     return render_template('settings.html', user=user)
-
-# ... (rest of your app.py remains unchanged)
 
 @app.route('/upload_profile_picture', methods=['POST'])
 def upload_profile_picture():
@@ -316,7 +361,6 @@ def upload_profile_picture():
     flash('Invalid file type. Allowed types: png, jpg, jpeg, gif', 'error')
     return redirect(url_for('profile'))
 
-#followers and following
 @app.route('/get_followers')
 def get_followers():
     if 'user_id' not in session:
@@ -466,7 +510,6 @@ def view_snippet_explore(id):
                          snippet=snippet, 
                          comments=comments_list)
 
-
 @app.route('/api/comments', methods=['POST'])
 def create_comment():
     if 'user_id' not in session:
@@ -511,53 +554,62 @@ def create_comment():
 def user_profile(username):
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    
+
     user = c.execute('''
-        SELECT id, username, email 
-        FROM users 
+        SELECT id, username, email, bio, profile_picture
+        FROM users
         WHERE username = ?
     ''', (username,)).fetchone()
-    
+
     if user is None:
         conn.close()
         flash('User not found!', 'error')
         return redirect(url_for('explore'))
-    
+
+    if 'user_id' in session and user[0] == session['user_id']:
+        conn.close()
+        return redirect(url_for('profile'))
+
     stats = c.execute('''
-        SELECT 
+        SELECT
             (SELECT COUNT(*) FROM followers WHERE followed_id = ?) as followers_count,
             (SELECT COUNT(*) FROM followers WHERE follower_id = ?) as following_count,
-            (SELECT COUNT(*) FROM snippets WHERE user_id = ?) as snippets_count,
-            (SELECT COUNT(*) FROM votes v 
-             JOIN snippets s ON v.snippet_id = s.id 
-             WHERE s.user_id = ? AND v.vote_type = 'up') as total_upvotes
+            (SELECT COUNT(*) FROM snippets WHERE user_id = ? AND is_private = 0) as snippets_count,
+            COALESCE((SELECT SUM(CASE WHEN vote_type = 'up' THEN 1 ELSE 0 END) FROM votes v
+             JOIN snippets s ON v.snippet_id = s.id
+             WHERE s.user_id = ?), 0) as total_upvotes
     ''', (user[0], user[0], user[0], user[0])).fetchone()
-    
+
     is_following = False
     if 'user_id' in session:
         is_following = c.execute('''
             SELECT EXISTS(
-                SELECT 1 FROM followers 
+                SELECT 1 FROM followers
                 WHERE follower_id = ? AND followed_id = ?
             )
-        ''', (session['user_id'], user[0])).fetchone()[0]
-    
+        ''', (session['user_id'], user[0])).fetchone()[0] == 1
+
     snippets = c.execute('''
         SELECT s.id, s.title, s.language, s.created_at,
                (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up') as upvotes,
-               (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down') as downvotes
+               (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down') as downvotes,
+               s.views
         FROM snippets s
         WHERE s.user_id = ? AND s.is_private = 0
         ORDER BY s.created_at DESC
     ''', (user[0],)).fetchall()
-    
+
+    snippet_views_map = {snippet[0]: snippet[6] for snippet in snippets}
+
     conn.close()
-    
-    return render_template('user_profile.html', 
+
+    return render_template('public_profile.html',
                          user=user,
-                         snippets=snippets,
+                         profile_username=user[1],  # Pass username for JS
                          stats=stats,
-                         is_following=is_following)
+                         snippets=snippets,
+                         is_following=is_following,
+                         snippet_views_map=snippet_views_map)
 
 @app.route('/snippet/new', methods=['GET', 'POST'])
 def new_snippet():
@@ -919,4 +971,6 @@ def downvote_snippet(id):
     return redirect(request.referrer or url_for('explore'))
 
 if __name__ == '__main__':
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
     app.run(debug=True, port=5001)
