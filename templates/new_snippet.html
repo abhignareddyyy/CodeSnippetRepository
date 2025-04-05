@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col">
+<div class="fixed inset-0 flex flex-col z-50">
     <!-- Header -->
     <div class="dark:bg-vesper-bg bg-cloud border-b dark:border-vesper-accent/20 border-silver py-4 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -18,7 +18,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 flex">
+    <div class="flex-1 flex overflow-hidden">
         <form method="POST" id="snippet-form" action="{{ url_for('new_snippet') }}" class="flex w-full h-full">
             <!-- Left Side: Form Fields -->
             <div class="w-1/4 dark:bg-vesper-bg bg-white p-6 border-r dark:border-vesper-accent/20 border-silver space-y-6 shadow-sm overflow-y-auto">
@@ -83,7 +83,7 @@
             </div>
 
             <!-- Right Side: Code Area -->
-            <div class="w-3/4 dark:bg-vesper-bg bg-white relative flex flex-col">
+            <div class="w-3/4 dark:bg-vesper-bg bg-white relative flex flex-col flex-1">
                 <!-- Header for Code Area -->
                 <div class="flex justify-between items-center px-6 py-3 border-b dark:border-vesper-accent/20 border-silver">
                     <label for="code" class="block text-sm font-medium dark:text-vesper-fg text-charcoal">Code</label>
@@ -95,7 +95,7 @@
                 <!-- Hidden textarea for form submission -->
                 <textarea name="code" id="code" class="hidden"></textarea>
                 <!-- CodeMirror Editor -->
-                <div id="code-editor" class="flex-1 w-full border dark:border-vesper-accent/40 border-silver rounded-b-lg shadow-sm"></div>
+                <div id="code-editor" class="flex-1 w-full border dark:border-vesper-accent/40 border-silver rounded-b-lg shadow-sm overflow-hidden"></div>
                 <div class="text-xs text-red-400 mt-1 hidden validation-message"></div>
             </div>
         </form>
@@ -118,6 +118,14 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Ensure CodeMirror fills the available space */
+    .CodeMirror {
+        height: 100% !important;
+        width: 100% !important;
+    }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -138,4 +146,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 
 <script src="{{ url_for('static', filename='js/new_snippet.js') }}"></script>
+
+<script>
+    // Ensure CodeMirror initializes with full height
+    document.addEventListener('DOMContentLoaded', function() {
+        const editor = CodeMirror(document.getElementById('code-editor'), {
+            lineNumbers: true,
+            theme: 'default',
+            mode: 'javascript' // Default mode, will be updated by language select
+        });
+        
+        // Sync CodeMirror with hidden textarea
+        editor.on('change', function() {
+            document.getElementById('code').value = editor.getValue();
+        });
+
+        // Update mode when language changes
+        document.getElementById('language').addEventListener('change', function() {
+            const mode = this.value === 'cpp' ? 'text/x-c++src' : 
+                        this.value === 'csharp' ? 'text/x-csharp' : 
+                        this.value === 'java' ? 'text/x-java' : this.value;
+            editor.setOption('mode', mode);
+        });
+    });
+</script>
 {% endblock %}

@@ -466,6 +466,7 @@ def view_snippet_explore(id):
                          snippet=snippet, 
                          comments=comments_list)
 
+
 @app.route('/api/comments', methods=['POST'])
 def create_comment():
     if 'user_id' not in session:
