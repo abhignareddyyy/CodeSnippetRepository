@@ -1,356 +1,419 @@
 {% extends "base.html" %}
 
 {% block head_extra %}
-    {# Include any extra fonts or icons if needed #}
+    {# Include Premium Fonts: Add a luxurious sans-serif like "Manrope" alongside Inter #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    {# Enhanced Favicons with Premium Touch #}
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="any">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
 {% endblock %}
 
 {% block content %}
 {# --- Main Page Structure --- #}
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950 text-slate-800 dark:text-zinc-200 font-['Inter',_sans-serif] antialiased">
-    <div class="relative mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 py-12 sm:py-16"> {# Wider horizontal padding #}
+<div class="page-wrapper min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-neutral-950 dark:via-gray-900 dark:to-indigo-900/20 text-gray-900 dark:text-gray-100 font-['Manrope',_'Inter',_sans-serif] antialiased relative isolate overflow-hidden">
+    {# Premium Background: Subtle radial gradient + noise #}
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.15)_0%,_rgba(0,0,0,0)_70%)] dark:bg-[radial-gradient(ellipse_at_center,_rgba(79,70,229,0.1)_0%,_rgba(0,0,0,0)_70%)] page-texture" aria-hidden="true"></div>
 
+    <div class="relative mx-auto px-4 sm:px-6 lg:px-12 xl:px-20 py-20 sm:py-28 max-w-screen-2xl">
         {# --- Header Row --- #}
-        <header class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 md:mb-16 items-center">
-            {# Left: Title #}
-            <div class="md:col-span-2">
-                <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <header class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20 md:mb-24 items-center">
+            {# Left: Title with Premium Typography #}
+            <div class="md:col-span-2 text-center md:text-left">
+                <h1 class="page-title text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 dark:text-white bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                     Discover Snippets
                 </h1>
-                 <p class="mt-2 text-lg text-slate-600 dark:text-zinc-400">Explore code shared by the community.</p>
+                <p class="mt-4 text-xl lg:text-2xl text-gray-600 dark:text-gray-300 font-light leading-relaxed">
+                    Curated, high-quality code from a vibrant developer community.
+                </p>
             </div>
 
-            {# Right: Actions #}
-            <div class="flex items-center space-x-3 md:justify-end">
+            {# Right: Actions with Premium Buttons #}
+            <div class="flex items-center space-x-5 md:justify-end justify-center">
                 {% if 'user_id' in session %}
-                    <a href="{{ url_for('new_snippet') }}" title="Create New Snippet"
-                       class="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 text-sm font-semibold text-white rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-50 dark:focus:ring-offset-black focus:ring-cyan-500 transition-all duration-200 ease-in-out transform hover:scale-105">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 -ml-1" viewBox="0 0 20 20" fill="currentColor">
-                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                       </svg>
+                    <a href="{{ url_for('new_snippet') }}" title="Create New Snippet" class="group inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 active:from-indigo-800 active:to-purple-800 text-sm font-semibold text-white rounded-xl shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400 transition-all duration-200 ease-out transform hover:scale-[1.04] active:scale-[1.00] hover:shadow-xl">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 -ml-1 group-hover:rotate-12 transition-transform duration-300" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                        </svg>
                         Create
                     </a>
-                 {% endif %}
-                <!-- Sort -->
-                 <div class="relative">
-                    <select id="sort-by" aria-label="Sort snippets" class="appearance-none block w-full pl-3 pr-8 py-2 border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 text-sm rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition cursor-pointer">
+                {% endif %}
+                {# Sort with Premium Dropdown #}
+                <div class="relative">
+                    <select id="sort-by" aria-label="Sort snippets" class="appearance-none block w-full pl-5 pr-12 py-3 border border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-900/80 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-xl shadow-inner hover:border-indigo-300 dark:hover:border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 transition-all duration-200 ease-out backdrop-blur-sm">
                         <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
                         <option value="most-upvoted" {% if sort == 'most-upvoted' %}selected{% endif %}>Most Upvoted</option>
                         <option value="trending" {% if sort == 'trending' %}selected{% endif %}>Trending</option>
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400 dark:text-zinc-500">
-                       <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 dark:text-gray-500">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                     </div>
-                 </div>
-                <!-- Search Toggle -->
-                 <button id="search-toggle" aria-label="Search users" class="flex-shrink-0 p-2 rounded-lg bg-white dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-700 dark:hover:text-slate-300 border border-slate-300 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors shadow-sm">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                 </button>
+                </div>
+                {# Search Toggle with Premium Icon #}
+                <button id="search-toggle" aria-label="Search users" class="flex-shrink-0 p-3 rounded-full bg-white/80 dark:bg-gray-900/80 text-gray-500 dark:text-gray-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-600 dark:hover:text-indigo-400 active:bg-indigo-200 dark:active:bg-indigo-800/50 border border-gray-200/50 dark:border-gray-700/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 transition-all duration-200 shadow-md active:scale-95 backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </button>
             </div>
         </header>
 
-        <!-- Search Dropdown -->
-        <div id="search-dropdown" class="absolute top-16 sm:top-24 right-4 sm:right-6 lg:right-12 xl:right-16 w-72 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl shadow-xl hidden z-20 origin-top-right transition-all duration-200 ease-out transform scale-95 opacity-0 ring-1 ring-black ring-opacity-5 dark:ring-white dark:ring-opacity-10">
-             <input type="text" id="user-search" placeholder="Search users..." class="block w-full px-4 py-3 text-sm bg-transparent text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-0 border-b border-slate-200 dark:border-zinc-700" autocomplete="off">
-             <div id="search-results" class="max-h-72 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-zinc-600">
-                  <p class="search-placeholder text-center text-xs text-slate-500 dark:text-zinc-500 py-6 px-4">Begin typing a username...</p>
-                  {# Results populated by JS #}
+        {# Search Dropdown with Premium Styling #}
+        <div id="search-dropdown" class="absolute top-24 sm:top-32 right-4 sm:right-6 lg:right-12 xl:right-20 w-96 bg-white/95 dark:bg-gray-900/95 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl shadow-2xl backdrop-blur-lg hidden z-20 origin-top-right transition-all duration-300 ease-out transform scale-95 opacity-0 ring-1 ring-indigo-200/20 dark:ring-indigo-800/20">
+            <input type="text" id="user-search" placeholder="Search users by username..." class="block w-full px-6 py-4 text-sm bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-0 border-b border-gray-200/50 dark:border-gray-700/50 font-medium" autocomplete="off">
+            <div id="search-results" class="max-h-80 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-indigo-800 scrollbar-thumb-rounded-full">
+                <p class="search-placeholder text-center text-sm text-gray-500 dark:text-gray-400 py-8 px-4 font-light">Begin your search...</p>
             </div>
         </div>
 
-
-        <!-- Trending Topics -->
-        <section aria-labelledby="trending-heading" class="mb-12 md:mb-16">
-            <h2 id="trending-heading" class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Trending Languages</h2>
-            <div class="flex flex-wrap items-center gap-2">
-                 {% for topic in trending_topics %}
-                 <a href="{{ url_for('explore', topic=topic[0]) }}"
-                    class="topic-tag inline-block px-3.5 py-1.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-full text-xs sm:text-sm font-medium text-slate-700 dark:text-zinc-300 shadow-sm transition-all duration-200 ease-in-out hover:shadow-md hover:border-sky-300 dark:hover:border-sky-700 hover:text-sky-700 dark:hover:text-sky-400 hover:-translate-y-0.5">
-                    <span>{{ topic[0] }}</span>
-                     <span class="ml-1.5 text-slate-400 dark:text-zinc-500 font-normal">({{ topic[1] }})</span>
-                 </a>
+        {# Trending Topics with Premium Tags #}
+        <section aria-labelledby="trending-heading" class="mb-20 md:mb-24">
+            <h2 id="trending-heading" class="text-2xl font-semibold text-gray-900 dark:text-white mb-6 tracking-tight">Trending Languages</h2>
+            <div class="flex flex-wrap items-center gap-4">
+                {% for topic in trending_topics %}
+                    <a href="{{ url_for('explore', topic=topic[0]) }}" class="topic-tag relative inline-block px-5 py-2.5 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-900/40 border border-gray-200/50 dark:border-indigo-800/50 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 shadow-md transition-all duration-300 ease-out hover:shadow-lg hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-400/50 dark:hover:border-indigo-600/50 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600 backdrop-blur-sm">
+                        <span>{{ topic[0] }}</span>
+                        <span class="ml-2 text-gray-400 dark:text-gray-500 font-normal">({{ topic[1] }})</span>
+                    </a>
                 {% else %}
-                <p class="text-sm text-slate-500 dark:text-zinc-500">No trending topics found right now.</p>
+                    <p class="text-base text-gray-600 dark:text-gray-400 font-light">No trending languages at the moment.</p>
                 {% endfor %}
-             </div>
-         </section>
+            </div>
+        </section>
 
-         <!-- Snippets Grid -->
+        {# Snippets Grid with Premium Cards #}
         <section aria-labelledby="snippets-heading">
-             <h2 id="snippets-heading" class="sr-only">Snippets List</h2> {# Screen reader only heading #}
+            <h2 id="snippets-heading" class="sr-only">Snippets List</h2>
 
             {% if snippets %}
-                <div id="snippets-grid" class="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {# Staggered animation applied via JS #}
-                     {% for snippet in snippets %}
-                     {# Data: 0:id, 1:title, 2:language, 3:description, 4:created_at, 5:username, 6:upvotes, 7:downvotes, 8:user_id #}
-                    <div class="snippet-card flex flex-col bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 ease-out opacity-0 translate-y-3" data-snippet-id="{{ snippet[0] }}">
-
-                         {# Card Header/Meta #}
-                        <div class="px-5 pt-5 pb-3">
-                             <div class="flex justify-between items-start mb-2 gap-2">
-                                 <h3 class="snippet-title text-lg font-semibold text-slate-900 dark:text-white leading-snug line-clamp-2">
-                                     <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}" class="hover:text-sky-600 dark:hover:text-sky-400 transition-colors">
-                                        {{ snippet[1] | default('Untitled Snippet') }}
-                                     </a>
-                                 </h3>
-                                 <span class="snippet-language flex-shrink-0 mt-0.5 inline-block px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
-                                     {{ snippet[2] | default('?') }}
-                                 </span>
-                             </div>
-                             <p class="text-xs text-slate-500 dark:text-zinc-400">
-                                By <a href="{{ url_for('user_profile', username=snippet[5]) }}" class="font-medium hover:text-slate-700 dark:hover:text-slate-300 transition-colors">{{ snippet[5] }}</a>
-                                {% if snippet[4] %}
-                                <span class="mx-1">•</span> {{ snippet[4][:10] }} {# Date Only #}
-                                {% endif %}
-                            </p>
-                        </div>
-
-                         {# Description #}
-                         {% if snippet[3] %}
-                        <div class="px-5 pb-4 text-sm text-slate-600 dark:text-zinc-400 line-clamp-3 leading-relaxed">
-                             {{ snippet[3] }}
-                        </div>
-                        {% endif %}
-
-                         {# Card Footer #}
-                        <div class="px-5 py-3 bg-slate-50 dark:bg-zinc-900/50 border-t border-slate-100 dark:border-zinc-800/50 mt-auto flex items-center justify-between gap-4">
-                             {# Votes #}
-                            <div class="flex items-center space-x-4">
-                                <form action="{{ url_for('upvote_snippet', id=snippet[0]) }}" method="POST" class="inline vote-form">
-                                    <button type="submit" aria-label="Upvote snippet" class="vote-btn flex items-center text-sm font-medium text-slate-500 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors duration-200">
-                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                                        <span class="vote-count">{{ snippet[6] | default(0) }}</span>
-                                    </button>
-                                 </form>
-                                 <form action="{{ url_for('downvote_snippet', id=snippet[0]) }}" method="POST" class="inline vote-form">
-                                    <button type="submit" aria-label="Downvote snippet" class="vote-btn flex items-center text-sm font-medium text-slate-500 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors duration-200">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                                        <span class="vote-count">{{ snippet[7] | default(0) }}</span>
-                                    </button>
-                                </form>
+                <div id="snippets-grid" class="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {% for snippet in snippets %}
+                        <div class="snippet-card group flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:border-indigo-300/50 dark:hover:border-indigo-600/50 transition-all duration-400 ease-out opacity-0 translate-y-6 hover:scale-[1.02] hover:bg-gradient-to-br hover:from-white hover:to-indigo-50/20 dark:hover:from-gray-900 dark:hover:to-indigo-900/40 backdrop-blur-sm" data-snippet-id="{{ snippet[0] }}">
+                            {# Card Header/Meta #}
+                            <div class="p-6 pb-4">
+                                <div class="flex justify-between items-start mb-3 gap-3">
+                                    <h3 class="snippet-title text-lg font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
+                                        <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}" class="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors focus:outline-none focus-visible:underline focus-visible:decoration-indigo-500 focus-visible:decoration-2 underline-offset-2">
+                                            {{ snippet[1] | default('Untitled Snippet') }}
+                                        </a>
+                                    </h3>
+                                    <span class="snippet-language flex-shrink-0 mt-0.5 inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-indigo-100/80 text-indigo-700 dark:bg-indigo-900/80 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 backdrop-blur-sm">
+                                        {{ snippet[2] | default('N/A') }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-light">
+                                    By <a href="{{ url_for('user_profile', username=snippet[5]) }}" class="font-medium text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none focus-visible:underline focus-visible:decoration-indigo-500">{{ snippet[5] }}</a>
+                                    {% if snippet[4] and snippet[4].strftime %}
+                                        <span class="mx-1.5">•</span>
+                                        <time datetime="{{ snippet[4].isoformat() }}">{{ snippet[4].strftime('%b %d, %Y') }}</time>
+                                    {% elif snippet[4] %}
+                                        <span class="mx-1.5">•</span> {{ snippet[4] }}
+                                    {% endif %}
+                                </p>
                             </div>
-                             {# View Link/Button #}
-                             <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}" class="group inline-flex items-center text-xs font-semibold text-sky-700 dark:text-sky-400 hover:text-sky-900 dark:hover:text-sky-300 transition-colors duration-200">
-                                <span>View Details</span>
-                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 ml-1 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
-                            </a>
+
+                            {# Description #}
+                            {% if snippet[3] %}
+                                <div class="px-6 pb-5 text-sm text-gray-600 dark:text-gray-300 font-light line-clamp-3 leading-relaxed">
+                                    {{ snippet[3] }}
+                                </div>
+                            {% else %}
+                                <div class="h-4"></div>
+                            {% endif %}
+
+                            {# Card Footer #}
+                            <div class="px-6 py-4 bg-gray-50/30 dark:bg-indigo-950/20 border-t border-gray-200/20 dark:border-indigo-900/30 mt-auto flex items-center justify-between gap-4 transition-colors duration-300 group-hover:bg-indigo-50/40 dark:group-hover:bg-indigo-900/30">
+                                {# Votes #}
+                                <div class="flex items-center space-x-6">
+                                    <form action="{{ url_for('upvote_snippet', id=snippet[0]) }}" method="POST" class="inline vote-form">
+                                        <button type="submit" aria-label="Upvote snippet" class="vote-btn group/vote flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 active:scale-90 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded-full">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 group-hover/vote:scale-110 transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                                            <span class="vote-count">{{ snippet[6] | default(0) }}</span>
+                                        </button>
+                                    </form>
+                                    <form action="{{ url_for('downvote_snippet', id=snippet[0]) }}" method="POST" class="inline vote-form">
+                                        <button type="submit" aria-label="Downvote snippet" class="vote-btn group/vote flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 active:scale-90 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 rounded-full">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 group-hover/vote:scale-110 transition-transform" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                            <span class="vote-count">{{ snippet[7] | default(0) }}</span>
+                                        </button>
+                                    </form>
+                                </div>
+                                {# View Link/Button #}
+                                <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}" class="group/link inline-flex items-center text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 active:text-indigo-900 dark:active:text-indigo-500 transition-colors duration-200 focus:outline-none focus-visible:underline focus-visible:decoration-indigo-500">
+                                    <span>View</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1.5 group-hover/link:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                                </a>
+                            </div>
                         </div>
-                    </div>
                     {% endfor %}
                 </div>
             {% else %}
-                 <div class="text-center py-20 sm:py-28 bg-white dark:bg-black rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm">
-                    <svg class="mx-auto h-12 w-12 text-slate-400 dark:text-zinc-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.158.79.44 1.074.284.284.66.441 1.074.441.23 0 .454-.035.664-.1.21-.065.404-.148.581-.261l1.735 1.735a.25.25 0 11-.354.354l-1.959-1.96a.25.25 0 010-.353l1.96-1.96a.25.25 0 01.353.354l-1.735 1.735c.114.177.196.37.261.581.065.21.1.433.1.664 0 .414-.158.79-.44 1.074-.284.284-.66.441-1.074.441-.23 0-.454-.035-.664-.1-.21-.065-.404-.148-.581-.261l-1.735 1.735a.25.25 0 01-.353 0l-.177-.177-1.376-1.376a.25.25 0 010-.354l1.736-1.736c-.114-.176-.196-.37-.26-.58a1.515 1.515 0 01-.101-.665c0-.414.158-.79.44-1.074.284-.284.66-.441 1.074-.441.23 0 .454.036.664.101.21.065.404.148.581.261l1.735-1.735a.25.25 0 01.353 0l.177.177 1.376 1.376a.25.25 0 010 .354l-1.736 1.736c.114.176.196.37.26.581a1.515 1.515 0 01.1.664zm-4.44-3.793a1.5 1.5 0 100 2.122 1.5 1.5 0 000-2.122zM16.17 15.83a1.5 1.5 0 100 2.122 1.5 1.5 0 000-2.122z"/><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V18h-6v-4.5m6 0V6A2.25 2.25 0 0014.25 3.75h-4.5A2.25 2.25 0 007.5 6v4.5m9 0h-6"/></svg>
-                     <h3 class="mt-2 text-base font-semibold text-slate-900 dark:text-white">Empty Space</h3>
-                     <p class="mt-1 text-sm text-slate-500 dark:text-zinc-400">No snippets found matching your criteria. Why not share one?</p>
-                     <div class="mt-6">
+                <div class="text-center py-28 sm:py-36 bg-gradient-to-br from-white to-indigo-50/20 dark:from-gray-900 dark:to-indigo-900/30 rounded-2xl border border-gray-200/30 dark:border-indigo-900/30 shadow-xl mt-10 backdrop-blur-lg">
+                    <svg class="mx-auto h-20 w-20 text-indigo-400 dark:text-indigo-500" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.412 15.655L7.938 12.182m0-4.243l3.474-3.473m4.95 4.95l-3.473 3.474M4.5 9.75l6.429 6.429" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white tracking-tight">Nothing to Show Yet</h3>
+                    <p class="mt-2 text-base text-gray-600 dark:text-gray-300 font-light">Explore or contribute to start the collection.</p>
+                    <div class="mt-10">
                         {% if 'user_id' in session %}
-                         <a href="{{ url_for('new_snippet') }}" class="inline-flex items-center px-5 py-2.5 bg-sky-600 ...">Share Snippet</a>
+                            <a href="{{ url_for('new_snippet') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 active:from-indigo-800 active:to-purple-800 text-base font-semibold text-white rounded-xl shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400 transition-all duration-200 transform hover:scale-[1.03] active:scale-[1.00] hover:shadow-xl">
+                                Share Your First Snippet
+                            </a>
                         {% else %}
-                         <a href="{{ url_for('login') }}" class="inline-flex items-center px-5 py-2.5 border border-transparent ...">Login to Share</a>
+                            <a href="{{ url_for('login') }}" class="inline-flex items-center px-8 py-4 border border-gray-200/50 dark:border-indigo-800/50 hover:border-indigo-400 dark:hover:border-indigo-500 text-base font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/30 active:bg-indigo-100/50 dark:active:bg-indigo-800/40 rounded-xl shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 transition-all duration-200">
+                                Login to Contribute
+                            </a>
                         {% endif %}
                     </div>
                 </div>
-             {% endif %} {# End if snippets #}
+            {% endif %}
 
-             {# Pagination would go here #}
-              <!-- Example: Add Placeholder if logic exists but no data for page -->
-              {% if snippets and not snippets %} {# Example: Backend passed pagination info but no results for page #}
-              <p class="text-center text-slate-500 dark:text-zinc-500 col-span-full mt-8">No more snippets found for this view.</p>
-              {% endif %}
-
+            {# --- Pagination with Premium Styling --- #}
+            {% if pagination %}
+                <nav class="flex items-center justify-between border-t border-gray-200/30 dark:border-indigo-900/30 px-4 sm:px-0 mt-20 pt-10" aria-label="Pagination">
+                    <div class="-mt-px flex w-0 flex-1">
+                        {% if pagination.has_prev %}
+                            <a href="{{ url_for('explore', page=pagination.prev_num, **request.args) }}" class="inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-600 hover:border-indigo-400 hover:text-indigo-600 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-all duration-200">
+                                <svg class="mr-3 h-5 w-5 text-gray-400 dark:text-indigo-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M18 10a.75.75 0 01-.75.75H4.66l2.1 1.95a.75.75 0 11-1.02 1.1l-3.5-3.25a.75.75 0 010-1.1l3.5-3.25a.75.75 0 111.02 1.1l-2.1 1.95h12.59A.75.75 0 0118 10z" clip-rule="evenodd" />
+                                </svg>
+                                Previous
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="hidden md:-mt-px md:flex">
+                        <span class="inline-flex items-center border-t-2 border-indigo-500 px-4 pt-4 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/30 rounded-t-lg" aria-current="page">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+                    </div>
+                    <div class="-mt-px flex w-0 flex-1 justify-end">
+                        {% if pagination.has_next %}
+                            <a href="{{ url_for('explore', page=pagination.next_num, **request.args) }}" class="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-600 hover:border-indigo-400 hover:text-indigo-600 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition-all duration-200">
+                                Next
+                                <svg class="ml-3 h-5 w-5 text-gray-400 dark:text-indigo-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M2 10a.75.75 0 01.75-.75h12.59l-2.1-1.95a.75.75 0 111.02-1.1l3.5 3.25a.75.75 0 010 1.1l-3.5 3.25a.75.75 0 11-1.02-1.1l2.1-1.95H2.75A.75.75 0 012 10z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        {% endif %}
+                    </div>
+                </nav>
+            {% endif %}
         </section>
-
-    </div> {# End container #}
-</div> {# End page wrapper #}
+    </div>
+</div>
 {% endblock %}
 
-
 {% block scripts %}
-{# Include necessary JS file for search, sort, AJAX voting #}
 <script src="{{ url_for('static', filename='js/explore.js') }}"></script>
-
-{# Additional page-specific JS for sort redirect and animations #}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-
-        // --- Sort Dropdown Redirect ---
+        // Sort Dropdown Redirect (unchanged logic, refined styling)
         const sortSelect = document.getElementById('sort-by');
         if (sortSelect) {
-             const urlParams = new URLSearchParams(window.location.search);
-             const currentSort = urlParams.get('sort') || 'newest';
-             sortSelect.value = currentSort;
-             sortSelect.addEventListener('change', function() {
-                 const selectedSort = this.value;
-                 const currentUrlParams = new URLSearchParams(window.location.search);
-                 currentUrlParams.set('sort', selectedSort);
-                 // Optional: Reset page param if pagination exists
-                 // currentUrlParams.delete('page');
-                 window.location.search = currentUrlParams.toString();
-             });
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSort = urlParams.get('sort') || 'newest';
+            if (Array.from(sortSelect.options).some(option => option.value === currentSort)) {
+                sortSelect.value = currentSort;
+            } else {
+                sortSelect.value = 'newest';
+            }
+            sortSelect.addEventListener('change', function() {
+                const selectedSort = this.value;
+                const currentUrlParams = new URLSearchParams(window.location.search);
+                currentUrlParams.set('sort', selectedSort);
+                currentUrlParams.delete('page');
+                window.location.href = `${window.location.pathname}?${currentUrlParams.toString()}`;
+            });
         }
 
-        // --- Search Dropdown Toggle ---
+        // Enhanced Search Dropdown with Smooth Animations
         const searchToggle = document.getElementById('search-toggle');
         const searchDropdown = document.getElementById('search-dropdown');
         const searchInput = document.getElementById('user-search');
         const searchResults = document.getElementById('search-results');
-        const searchPlaceholder = searchResults.querySelector('.search-placeholder');
+        const searchPlaceholder = searchResults?.querySelector('.search-placeholder');
         let searchTimeout;
+        let isSearchOpen = false;
 
-        if (searchToggle && searchDropdown) {
-            searchToggle.addEventListener('click', (e) => {
-                 e.stopPropagation();
-                 const isHidden = searchDropdown.classList.contains('hidden');
-                 if (isHidden) {
-                     searchDropdown.classList.remove('hidden', 'scale-95', 'opacity-0');
-                      searchDropdown.classList.add('scale-100', 'opacity-100');
-                      searchInput.focus();
-                 } else {
-                     closeSearchDropdown();
-                 }
-            });
-
-            function closeSearchDropdown() {
-                if (!searchDropdown.classList.contains('hidden')) {
-                    searchDropdown.classList.remove('scale-100', 'opacity-100');
-                    searchDropdown.classList.add('scale-95', 'opacity-0');
-                    setTimeout(() => searchDropdown.classList.add('hidden'), 200);
-                 }
-             }
-            document.addEventListener('click', (e) => {
-                 if (!searchDropdown.contains(e.target) && e.target !== searchToggle && !searchToggle.contains(e.target)) {
-                    closeSearchDropdown();
-                 }
-            });
-             document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeSearchDropdown(); });
-
-             // User search AJAX (if using the endpoint defined previously)
-            searchInput.addEventListener('input', () => {
-                 clearTimeout(searchTimeout);
-                 const query = searchInput.value.trim();
-
-                 if (query.length < 2) { // Start searching after 2 chars
-                     searchResults.innerHTML = ''; // Clear previous results
-                      if(searchPlaceholder) searchPlaceholder.style.display = 'block';
-                      searchResults.appendChild(searchPlaceholder);
-                     return;
-                 }
-
-                 if(searchPlaceholder) searchPlaceholder.style.display = 'none';
-                 searchResults.innerHTML = '<p class="text-center text-xs text-slate-500 dark:text-zinc-500 py-4 px-4">Searching...</p>'; // Loading indicator
-
-                 searchTimeout = setTimeout(() => {
-                     fetch(`/search_users?query=${encodeURIComponent(query)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            searchResults.innerHTML = ''; // Clear loading/previous
-                            if (data.users && data.users.length > 0) {
-                                data.users.forEach(user => {
-                                     const link = document.createElement('a');
-                                     link.href = `/user/${user.username}`;
-                                     link.className = 'block px-4 py-2 text-sm text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-md transition-colors';
-                                     link.textContent = `${user.username} (${user.snippet_count} snippets)`;
-                                     searchResults.appendChild(link);
-                                });
-                            } else {
-                                searchResults.innerHTML = '<p class="text-center text-xs text-slate-500 dark:text-zinc-500 py-4 px-4">No users found.</p>';
-                            }
-                         })
-                         .catch(error => {
-                            console.error("Search error:", error);
-                             searchResults.innerHTML = '<p class="text-center text-xs text-red-500 dark:text-red-400 py-4 px-4">Search failed.</p>';
-                         });
-                }, 300); // Debounce search
-             });
-
+        function openSearchDropdown() {
+            if (!isSearchOpen && searchDropdown) {
+                searchDropdown.classList.remove('hidden', 'scale-95', 'opacity-0');
+                requestAnimationFrame(() => {
+                    searchDropdown.classList.add('scale-100', 'opacity-100');
+                });
+                searchInput.focus();
+                isSearchOpen = true;
+                document.addEventListener('click', handleClickOutsideSearch, { capture: true });
+                document.addEventListener('keydown', handleSearchEscape);
+            }
         }
 
-        // --- AJAX Voting (Ensure this is in explore.js or here) ---
-        // Assumes explore.js handles this. If not, add the event listener delegation logic:
-        /*
-        document.getElementById('snippets-grid')?.addEventListener('submit', function(event) {
-            if (event.target.matches('.vote-form')) {
-                event.preventDefault();
-                const form = event.target;
-                const snippetId = form.closest('.snippet-card').dataset.snippetId;
-                // Perform fetch to form.action (upvote/downvote endpoint)
-                // Update vote counts in span.vote-count on success
-                // Add visual feedback (e.g., button color change)
-                console.log(`Submitting vote form for snippet ${snippetId} to ${form.action}`);
+        function closeSearchDropdown() {
+            if (isSearchOpen && searchDropdown) {
+                searchDropdown.classList.remove('scale-100', 'opacity-100');
+                searchDropdown.classList.add('scale-95', 'opacity-0');
+                searchDropdown.addEventListener('transitionend', () => {
+                    if (!isSearchOpen) searchDropdown.classList.add('hidden');
+                }, { once: true });
+                isSearchOpen = false;
+                document.removeEventListener('click', handleClickOutsideSearch, { capture: true });
+                document.removeEventListener('keydown', handleSearchEscape);
             }
-        });
-        */
+        }
 
-         // --- Staggered Entry Animation ---
-        const snippetCards = document.querySelectorAll('.snippet-card');
-        const observerOptions = {
-            root: null, // relative to the viewport
-            rootMargin: '0px',
-            threshold: 0.1 // Trigger when 10% of the element is visible
-        };
+        function handleClickOutsideSearch(event) {
+            if (isSearchOpen && searchDropdown && !searchDropdown.contains(event.target) && searchToggle && !searchToggle.contains(event.target)) {
+                closeSearchDropdown();
+            }
+        }
 
-        const observerCallback = (entries, observer) => {
-            entries.forEach((entry, index) => {
-                if (entry.isIntersecting) {
-                    const card = entry.target;
-                     // Apply animation classes after a delay based on index
-                    setTimeout(() => {
-                         card.classList.remove('opacity-0', 'translate-y-3');
-                         card.classList.add('opacity-100', 'translate-y-0', 'transition-all', 'duration-500', 'ease-out');
-                    }, index * 50); // Stagger delay 50ms per card
+        function handleSearchEscape(event) {
+            if (event.key === 'Escape' && isSearchOpen) {
+                closeSearchDropdown();
+            }
+        }
 
-                    observer.unobserve(card); // Stop observing once animated
+        if (searchToggle && searchDropdown && searchInput && searchResults && searchPlaceholder) {
+            searchToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isSearchOpen) closeSearchDropdown();
+                else openSearchDropdown();
+            });
+
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                const query = searchInput.value.trim();
+
+                if (query.length < 2) {
+                    searchResults.innerHTML = '';
+                    searchPlaceholder.style.display = 'block';
+                    searchResults.appendChild(searchPlaceholder);
+                    return;
                 }
-             });
-         };
 
-        const observer = new IntersectionObserver(observerCallback, observerOptions);
-        snippetCards.forEach(card => {
-             observer.observe(card);
-        });
+                searchPlaceholder.style.display = 'none';
+                searchResults.innerHTML = `<div class="flex justify-center items-center py-6"><svg class="animate-spin h-6 w-6 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
 
-    }); // End DOMContentLoaded
+                searchTimeout = setTimeout(() => {
+                    fetch(`/search_users?query=${encodeURIComponent(query)}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+                            return response.json();
+                        })
+                        .then(data => {
+                            searchResults.innerHTML = '';
+                            if (data.users && data.users.length > 0) {
+                                data.users.forEach(user => {
+                                    const link = document.createElement('a');
+                                    link.href = `/user/${user.username}`;
+                                    link.className = 'block px-6 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/50 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md';
+                                    link.innerHTML = `<span class="font-medium">${user.username}</span> <span class="text-xs text-gray-400 dark:text-gray-500 ml-2">(${user.snippet_count} snippet${user.snippet_count !== 1 ? 's' : ''})</span>`;
+                                    searchResults.appendChild(link);
+                                });
+                            } else {
+                                searchResults.innerHTML = '<p class="text-center text-sm text-gray-500 dark:text-gray-400 py-6 px-4 font-light">No users found.</p>';
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Search error:", error);
+                            searchResults.innerHTML = '<p class="text-center text-sm text-red-600 dark:text-red-400 py-6 px-4">Search failed.</p>';
+                        });
+                }, 350);
+            });
+        }
+
+        // Premium Staggered Animation with Enhanced Easing
+        const snippetCards = document.querySelectorAll('.snippet-card');
+        if (snippetCards.length > 0 && 'IntersectionObserver' in window) {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px 0px -15% 0px',
+                threshold: 0.2
+            };
+
+            const observerCallback = (entries, observer) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const card = entry.target;
+                        const visibleCards = Array.from(snippetCards).filter(c => c.classList.contains('opacity-0'));
+                        const delay = visibleCards.indexOf(card) * 80;
+
+                        card.style.transitionDelay = `${delay}ms`;
+                        card.classList.remove('opacity-0', 'translate-y-6');
+                        card.classList.add('opacity-100', 'translate-y-0');
+
+                        observer.unobserve(card);
+                        card.addEventListener('transitionend', () => {
+                            card.style.transitionDelay = '';
+                        }, { once: true });
+                    }
+                });
+            };
+
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+            snippetCards.forEach(card => observer.observe(card));
+        } else {
+            snippetCards.forEach(card => {
+                card.classList.remove('opacity-0', 'translate-y-6');
+                card.classList.add('opacity-100', 'translate-y-0');
+            });
+        }
+    });
 </script>
 {% endblock %}
 
-{# Add a <style> block specifically for complex CSS not easily doable with Tailwind #}
+{% block styles %}
 <style>
-    /* Additional subtle refinements */
-    body {
-        /* Potential background pattern */
-         /* background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23dbeafe' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); */
-    }
-    .dark body {
-       /* background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231f2937' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); */
+    /* Premium Typography */
+    .page-title {
+        text-wrap: balance;
+        font-family: 'Manrope', 'Inter', sans-serif;
+        letter-spacing: -0.025em;
     }
 
+    /* Enhanced Background Texture */
+    .page-texture {
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABdJREFUeNpiZmpmZmD+///fzALAAIMAP4QNZEFEmLYAAAAASUVORK5CYII=');
+        mask-image: radial-gradient(circle, rgba(0,0,0,0.8), transparent);
+        opacity: 0.06;
+    }
+    .dark .page-texture {
+        opacity: 0.04;
+        filter: invert(1);
+    }
+
+    /* Premium Focus Styles */
+    button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible {
+        outline: 2px solid theme('colors.indigo.400');
+        outline-offset: 2px;
+        box-shadow: 0 0 0 6px theme('colors.indigo.400 / 15%');
+        border-radius: inherit;
+    }
+    *:focus:not(:focus-visible) {
+        outline: none;
+        box-shadow: none;
+    }
+
+    /* Refined Scrollbar */
+    .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background-color: theme('colors.gray.300 / 60%'); border-radius: 4px; }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: theme('colors.indigo.800 / 70%'); }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: theme('colors.gray.400'); }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: theme('colors.indigo.700'); }
+
+    /* Premium Card Animation */
     .snippet-card {
-         /* You can add custom properties here */
-         --card-bg: theme('colors.white');
-         --card-border: theme('colors.slate.200');
-         background-color: var(--card-bg);
-         border-color: var(--card-border);
-         will-change: transform, box-shadow; /* Optimize animation */
-     }
+        will-change: transform, box-shadow, opacity, background;
+        transition-property: transform, box-shadow, opacity, background-color, border-color;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 500ms;
+    }
+    .snippet-card:hover {
+        transition-duration: 250ms;
+    }
 
-     .dark .snippet-card {
-         --card-bg: theme('colors.zinc.900');
-         --card-border: theme('colors.zinc.800');
-     }
-
-     /* Animation keyframes (if not using Tailwind's built-in) */
-     /* Tailwind now includes basic animations, but custom ones might be needed */
-
-    /* Custom scrollbar appearance */
-     .scrollbar-thin::-webkit-scrollbar { width: 5px; height: 5px; }
-     .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-     .scrollbar-thin::-webkit-scrollbar-thumb { background-color: theme('colors.slate.300'); border-radius: 5px; }
-     .dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: theme('colors.zinc.700'); }
-     .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: theme('colors.slate.400'); }
-     .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: theme('colors.zinc.600'); }
-
+    /* Global Smoothing */
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 </style>
+{% endblock %}

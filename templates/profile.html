@@ -1,89 +1,70 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+    {# Premium Fonts: Manrope + Inter #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen py-8 bg-gray-50 dark:bg-dark-surface">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Premium Profile Header with Banner -->
-        <div class="dark:bg-dark-surface-2 bg-white rounded-xl shadow-lg dark:shadow-none dark:border border-gray-800 overflow-hidden mb-8">
-            <!-- Profile Banner (Premium Feature) -->
-            <div class="h-32 bg-gradient-to-r from-blue-600 to-purple-600 relative">
-                <!-- Premium Badge -->
-                <div class="absolute top-4 right-4 bg-amber-400 text-charcoal text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                    PREMIUM
-                </div>
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/20 dark:from-gray-900 dark:via-gray-950 dark:to-indigo-900/30 text-gray-900 dark:text-gray-100 font-['Manrope',_'Inter',_sans-serif] antialiased relative isolate overflow-hidden">
+    {# Premium Background: Radial Gradient + Noise #}
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.15)_0%,_rgba(0,0,0,0)_70%)] dark:bg-[radial-gradient(ellipse_at_center,_rgba(79,70,229,0.1)_0%,_rgba(0,0,0,0)_70%)] page-texture" aria-hidden="true"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 py-20 sm:py-28">
+        <!-- Profile Header -->
+        <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 rounded-2xl shadow-lg border border-gray-200/30 dark:border-indigo-900/30 overflow-hidden mb-12 backdrop-blur-sm">
+            <!-- Banner -->
+            <div class="h-40 bg-gradient-to-r from-indigo-600 to-purple-600 relative">
+                <div class="absolute top-6 right-6 bg-amber-400 text-gray-900 text-xs font-semibold px-4 py-1.5 rounded-full shadow-md uppercase tracking-wide">Premium</div>
             </div>
-            
-            <div class="px-8 py-6 relative">
-                <!-- Avatar with Profile Picture -->
-                <div class="absolute -top-12 left-8 rounded-full h-24 w-24 bg-white dark:bg-dark-surface-2 p-1 shadow-lg overflow-hidden">
+
+            <div class="px-8 py-10 relative">
+                <!-- Avatar -->
+                <div class="absolute -top-16 left-8 rounded-full h-28 w-28 bg-gradient-to-r from-indigo-300 to-purple-300 dark:from-indigo-600 dark:to-purple-600 p-1 shadow-xl overflow-hidden">
                     {% if profile_picture %}
                         <img src="{{ url_for('static', filename='uploads/' + profile_picture) }}" alt="Profile Picture" class="h-full w-full object-cover rounded-full">
                     {% else %}
-                        <!-- Default GitHub-like Avatar with Initials -->
-                        <div class="h-full w-full rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            <span class="text-4xl font-bold text-gray-600 dark:text-gray-300">
-                                {{ user[1][0]|upper if user[1] else 'U' }}
-                            </span>
+                        <div class="h-full w-full rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800 dark:to-purple-800 flex items-center justify-center text-5xl font-bold text-indigo-600 dark:text-indigo-300">
+                            {{ user[1][0]|upper if user[1] else '?' }}
                         </div>
                     {% endif %}
                 </div>
-                
-                <div class="ml-28">
-                    <h1 class="text-4xl font-extrabold dark:text-white text-charcoal">
+
+                <div class="ml-36">
+                    <h1 class="text-5xl font-bold tracking-tight text-gray-900 dark:text-white bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                         {{ user[1] }}
                     </h1>
-                    <p class="text-sm dark:text-gray-400 text-silver mt-1">
-                        Member since {{ join_date[:10] if join_date else 'Unknown' }}
-                    </p>
-                    <!-- Profile Picture Upload Form -->
-                    <form action="{{ url_for('upload_profile_picture') }}" method="post" enctype="multipart/form-data" class="mt-2">
-                        <label for="profile_picture" class="text-sm dark:text-accent text-royal cursor-pointer hover:underline">
-                            Change Profile Picture
-                        </label>
+                    <p class="text-lg text-gray-600 dark:text-gray-300 font-light mt-2">Member since {{ join_date[:10] if join_date else 'Unknown' }}</p>
+                    <form action="{{ url_for('upload_profile_picture') }}" method="post" enctype="multipart/form-data" class="mt-3">
+                        <label for="profile_picture" class="text-sm text-indigo-600 dark:text-indigo-400 font-medium cursor-pointer hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Change Profile Picture</label>
                         <input type="file" name="profile_picture" id="profile_picture" accept="image/*" class="hidden" onchange="this.form.submit()">
                     </form>
                 </div>
-                
-                <div class="profile-stats flex flex-wrap gap-6 mt-6">
-                    <div class="stat-box flex items-center space-x-2">
-                        <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ snippet_count }}</span>
-                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Snippets</span>
-                    </div>
-                    <div class="stat-box flex items-center space-x-2 cursor-pointer" onclick="showFollowers()">
-                        <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ followers_count }}</span>
-                        <span class="stat-label text-sm dark:text-gray-400 text-silver hover:underline">Followers</span>
-                    </div>
-                    <div class="stat-box flex items-center space-x-2 cursor-pointer" onclick="showFollowing()">
-                        <span class="stat-number text-lg font-semibold dark:text-white text-charcoal">{{ following_count }}</span>
-                        <span class="stat-label text-sm dark:text-gray-400 text-silver hover:underline">Following</span>
-                    </div>
-                    <!-- Premium Stats -->
-                    <div class="stat-box flex items-center space-x-2">
-                        <span class="stat-number text-lg font-semibold text-amber-500">{{ snippet_views|default(0) }}</span>
-                        <span class="stat-label text-sm dark:text-gray-400 text-silver">Total Views</span>
-                    </div>
+
+                <!-- Stats -->
+                <div class="profile-stats grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
+                    {% for label, value, color in [('Snippets', snippet_count, 'gray-900 dark:text-white'), ('Followers', followers_count, 'gray-900 dark:text-white'), ('Following', following_count, 'gray-900 dark:text-white'), ('Total Views', snippet_views_map.values() | sum, 'amber-500')] %}
+                        <div class="stat-box flex items-center space-x-3">
+                            <span class="stat-number text-2xl font-semibold text-{{ color }} bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">{{ value | default(0) }}</span>
+                            <span class="stat-label text-sm text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">{{ label }}</span>
+                        </div>
+                    {% endfor %}
                 </div>
 
-                <!-- Bio Section -->
+                <!-- Bio -->
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">Bio</h3>
+                    <p class="text-base text-gray-600 dark:text-gray-300 font-light mt-2">{{ bio if bio else "No bio set yet." }}</p>
+                </div>
+
+                <!-- Action Button -->
                 <div class="mt-6">
-                    <h3 class="text-lg font-semibold dark:text-white text-charcoal">Bio</h3>
-                    <p class="text-sm dark:text-gray-400 text-silver mt-1">
-                        {{ bio if bio else "No bio set yet." }}
-                    </p>
-                </div>
-
-                <!-- Set Up Profile or Settings Button -->
-                <div class="mt-4">
-                    {% if not profile_setup_complete %}
-                        <a href="{{ url_for('setup_profile') }}" 
-                           class="inline-flex items-center px-6 py-3 bg-amber-400 text-charcoal text-sm font-medium rounded-xl hover:bg-amber-500 transition-colors duration-200">
-                            Set Up Profile
-                        </a>
+                    {% if not profile_setup %}
+                        <a href="{{ url_for('setup_profile') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-gray-900 text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 ease-out transform hover:scale-[1.03]">Set Up Profile</a>
                     {% else %}
-                        <a href="{{ url_for('settings') }}" 
-                           class="text-sm dark:text-accent text-royal hover:underline">
-                            Edit Settings
-                        </a>
+                        <a href="{{ url_for('settings') }}" class="text-sm text-indigo-600 dark:text-indigo-400 font-medium hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Edit Settings</a>
                     {% endif %}
                 </div>
             </div>
@@ -91,187 +72,96 @@
 
         <!-- Main Content Area -->
         <div class="flex flex-col md:flex-row gap-8">
-            <!-- Left Sidebar (Premium Feature) -->
-            <div class="w-full md:w-1/4">
-                <div class="dark:bg-dark-surface-2 bg-white rounded-xl shadow-md dark:shadow-none dark:border border-gray-800 p-6 mb-6">
-                    <h3 class="text-lg font-bold dark:text-white text-charcoal mb-4">Quick Actions</h3>
-                    <ul class="space-y-3">
-                        <li>
-                            <a href="{{ url_for('new_snippet') }}" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
-                                <span class="text-lg">+</span>
-                                <span>New Snippet</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
-                                <span class="text-lg">★</span>
-                                <span>Favorites</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ url_for('settings') }}" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
-                                <span class="text-lg">⚙</span>
-                                <span>Settings</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center space-x-2 text-sm dark:text-white text-charcoal dark:hover:text-accent hover:text-royal transition-colors">
-                                <span class="text-lg">↗</span>
-                                <span>Share Profile</span>
-                            </a>
-                        </li>
+            <!-- Sidebar -->
+            <div class="w-full md:w-1/4 space-y-6">
+                <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 rounded-2xl shadow-lg border border-gray-200/30 dark:border-indigo-900/30 p-6 backdrop-blur-sm">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 tracking-tight">Quick Actions</h3>
+                    <ul class="space-y-4">
+                        {% for icon, text, url in [('+', 'New Snippet', url_for('new_snippet')), ('★', 'Favorites', '#'), ('⚙', 'Settings', url_for('settings')), ('↗', 'Share Profile', '#')] %}
+                            <li>
+                                <a href="{{ url }}" class="flex items-center space-x-3 text-base text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 group">
+                                    <span class="text-xl group-hover:scale-110 transition-transform duration-200">{{ icon }}</span>
+                                    <span>{{ text }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
-                
-                <!-- Premium Feature: Popular Tags -->
-                <div class="dark:bg-dark-surface-2 bg-white rounded-xl shadow-md dark:shadow-none dark:border border-gray-800 p-6">
-                    <h3 class="text-lg font-bold dark:text-white text-charcoal mb-4">Your Top Tags</h3>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">javascript</span>
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">python</span>
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">html</span>
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-royal/10 text-royal dark:bg-white/10 dark:text-white">css</span>
+
+                <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 rounded-2xl shadow-lg border border-gray-200/30 dark:border-indigo-900/30 p-6 backdrop-blur-sm">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 tracking-tight">Your Top Tags</h3>
+                    <div class="flex flex-wrap gap-3">
+                        {% for tag in ['javascript', 'python', 'html', 'css'] %}
+                            <span class="px-4 py-2 rounded-full text-sm font-medium bg-indigo-100/80 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 shadow-sm hover:shadow-md transition-all duration-200">{{ tag }}</span>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
-            
+
             <!-- Main Content -->
             <div class="w-full md:w-3/4">
-                <!-- Search Bar with Premium Features -->
-                <div class="relative mb-6">
-                    <input type="text" 
-                           id="snippet-search" 
-                           placeholder="Search your snippets..." 
-                           class="w-full dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl pl-10 pr-4 py-3 dark:text-white text-charcoal placeholder-gray-500 dark:focus:border-accent focus:border-royal focus:ring-1 dark:focus:ring-accent focus:ring-royal focus:outline-none transition-colors shadow-sm">
-                    <div class="absolute left-3 top-3 text-gray-500">
-                        <!-- Search Icon -->
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                <!-- Search Bar -->
+                <div class="relative mb-8">
+                    <input type="text" id="snippet-search" placeholder="Search your snippets..." class="w-full pl-12 pr-12 py-4 bg-white/80 dark:bg-gray-900/80 border border-gray-200/50 dark:border-indigo-900/50 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-md transition-all duration-200 backdrop-blur-sm">
+                    <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                    <!-- Premium Search Filters Button -->
-                    <div class="absolute right-3 top-3 text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
+                    <div class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
                     </div>
                 </div>
 
-                <!-- Premium Feature: Filters & Sort -->
-                <div class="flex flex-wrap justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold dark:text-white text-charcoal">Your Snippets</h2>
-                    
+                <!-- Filters & Sort -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                    <h2 class="text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">Your Snippets</h2>
                     <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <select class="appearance-none dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-lg px-4 py-2 pr-8 text-sm dark:text-white text-charcoal focus:outline-none">
-                                <option>All Languages</option>
-                                <option>JavaScript</option>
-                                <option>Python</option>
-                                <option>HTML/CSS</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
+                        {% for options, placeholder in [(['All Languages', 'JavaScript', 'Python', 'HTML/CSS'], 'Language'), (['Sort by Latest', 'Most Popular', 'Most Upvoted'], 'Sort')] %}
+                            <div class="relative">
+                                <select class="appearance-none pl-5 pr-10 py-3 bg-white/80 dark:bg-gray-900/80 border border-gray-200/50 dark:border-indigo-900/50 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 shadow-md hover:border-indigo-300 dark:hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 backdrop-blur-sm">
+                                    {% for option in options %}<option>{{ option }}</option>{% endfor %}
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 dark:text-gray-500">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" /></svg>
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div class="relative">
-                            <select class="appearance-none dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-lg px-4 py-2 pr-8 text-sm dark:text-white text-charcoal focus:outline-none">
-                                <option>Sort by Latest</option>
-                                <option>Most Popular</option>
-                                <option>Most Upvoted</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
 
-                <!-- Snippets Section with Premium Cards -->
+                <!-- Snippets -->
                 {% if snippets %}
-                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {% for snippet in snippets %}
-                        <div class="snippet-card dark:bg-dark-surface-2 bg-white border dark:border-gray-800 border-silver rounded-xl overflow-hidden shadow-md dark:shadow-none dark:hover:border-white/20 hover:border-royal/20 hover:shadow-lg transition-all duration-200">
-                            <div class="px-6 py-5">
-                                <h3 class="snippet-title text-xl font-semibold dark:text-white text-charcoal mb-3 line-clamp-1">{{ snippet[1] }}</h3>
-                                <div class="flex items-center space-x-3 mb-4">
-                                    <span class="snippet-language px-3 py-1 rounded-full text-xs font-medium dark:bg-white/10 bg-royal/10 dark:text-white text-royal">
-                                        {{ snippet[2] }}
-                                    </span>
-                                    <span class="text-xs dark:text-gray-400 text-silver">
-                                        {{ snippet[3][:10] }}
-                                    </span>
-                                    <!-- Premium Feature: Views -->
-                                    <span class="text-xs dark:text-gray-400 text-silver ml-auto flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                        {{ snippet_views_map[snippet[0]]|default(0) }}
-                                    </span>
-                                </div>
-                                <div class="vote-stats flex space-x-4">
-                                    <span class="upvotes flex items-center dark:text-green-400 text-green-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-                                        </svg>
-                                        {{ snippet[4] }}
-                                    </span>
-                                    <span class="downvotes flex items-center dark:text-red-400 text-red-600">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                        {{ snippet[5] }}
-                                    </span>
-                                    <!-- Premium Feature: Favorites -->
-                                    <span class="favorites flex items-center ml-auto cursor-pointer dark:text-amber-400 text-amber-600 hover:scale-110 transition-transform">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="px-6 py-4 dark:bg-dark-surface bg-cloud border-t dark:border-gray-800 border-silver">
-                                <div class="flex justify-between items-center">
-                                    <!-- Premium Feature: Code Preview -->
-                                    <div class="text-xs dark:text-gray-400 text-silver truncate w-24">
-                                        <code>{{ snippet['code']|default('// code preview')|truncate(20, true) }}</code>
+                            <div class="snippet-card group bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl hover:border-indigo-300/50 dark:hover:border-indigo-600/50 transition-all duration-400 ease-out backdrop-blur-sm">
+                                <div class="px-6 py-6">
+                                    <h3 class="snippet-title text-xl font-semibold text-gray-900 dark:text-white mb-3 line-clamp-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ snippet[1] }}</h3>
+                                    <div class="flex items-center gap-4 mb-4 text-sm text-gray-500 dark:text-gray-400 font-light">
+                                        <span class="snippet-language px-3 py-1 bg-indigo-100/80 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 rounded-full font-medium border border-indigo-200/50 dark:border-indigo-800/50">{{ snippet[2] }}</span>
+                                        <span>{{ snippet[3][:10] if snippet[3] else 'N/A' }}</span>
+                                        <span class="ml-auto flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>{{ snippet_views_map.get(snippet[0], 0) }}</span>
                                     </div>
-                                    <div class="flex space-x-4">
-                                        <a href="{{ url_for('view_snippet', id=snippet[0]) }}" 
-                                           class="text-sm font-medium dark:text-white text-charcoal dark:hover:text-gray-300 hover:text-royal transition-colors duration-200">
-                                            View
-                                        </a>
-                                        <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" 
-                                           class="text-sm font-medium dark:text-blue-400 text-blue-600 dark:hover:text-blue-300 hover:text-blue-800 transition-colors duration-200">
-                                            Edit
-                                        </a>
-                                        <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" 
-                                              method="POST" 
-                                              class="inline delete-snippet-form">
-                                            <button type="submit" 
-                                                    class="text-sm font-medium dark:text-red-400 text-red-600 dark:hover:text-red-300 hover:text-red-800 transition-colors duration-200">
-                                                Delete
-                                            </button>
-                                        </form>
+                                    <div class="vote-stats flex items-center gap-6 text-sm font-medium">
+                                        <span class="upvotes flex items-center text-emerald-600 dark:text-emerald-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 15l7-7 7 7" /></svg>{{ snippet[4] }}</span>
+                                        <span class="downvotes flex items-center text-rose-600 dark:text-rose-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" /></svg>{{ snippet[5] }}</span>
+                                        <span class="favorites flex items-center ml-auto text-amber-500 hover:scale-110 transition-transform duration-200 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg></span>
+                                    </div>
+                                </div>
+                                <div class="px-6 py-4 bg-gray-50/50 dark:bg-indigo-950/20 border-t border-gray-200/20 dark:border-indigo-900/30 flex justify-between items-center transition-colors duration-300 group-hover:bg-indigo-50/40 dark:group-hover:bg-indigo-900/30">
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 truncate w-24"><code>{{ snippet[6]|default('// no code')|truncate(20, true) }}</code></div>
+                                    <div class="flex items-center gap-4">
+                                        <a href="{{ url_for('view_snippet', id=snippet[0]) }}" class="group/link text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"><span>View</span><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1 inline group-hover/link:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg></a>
+                                        <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" class="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors">Edit</a>
+                                        <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this snippet?');" class="inline"><button type="submit" class="text-sm font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors">Delete</button></form>
                                     </div>
                                 </div>
                             </div>
-                        </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="py-12 px-6 dark:bg-dark-surface-2 bg-white rounded-xl shadow-md dark:shadow-none dark:border border-gray-800 border-silver text-left">
-                        <h3 class="text-xl font-bold dark:text-white text-charcoal mb-4">Start Your Collection</h3>
-                        <p class="text-base dark:text-gray-400 text-silver mb-6">You haven't created any snippets yet. Get started by creating your first snippet.</p>
-                        <a href="{{ url_for('new_snippet') }}" 
-                           class="inline-flex items-center px-6 py-3 border-2 dark:border-accent border-royal text-sm font-medium rounded-xl dark:text-accent text-royal dark:hover:bg-accent/10 hover:bg-royal/10 transition-colors duration-200">
-                            Create Your First Snippet
-                        </a>
+                    <div class="py-16 px-8 bg-gradient-to-br from-white to-indigo-50/20 dark:from-gray-900 dark:to-indigo-900/30 rounded-2xl border border-gray-200/30 dark:border-indigo-900/30 shadow-lg text-center backdrop-blur-sm">
+                        <h3 class="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight mb-4">Start Your Collection</h3>
+                        <p class="text-lg text-gray-600 dark:text-gray-300 font-light mb-6">You haven’t created any snippets yet. Get started now.</p>
+                        <a href="{{ url_for('new_snippet') }}" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:scale-[1.03]">Create Your First Snippet</a>
                     </div>
                 {% endif %}
             </div>
@@ -280,123 +170,133 @@
 </div>
 
 <!-- Followers Modal -->
-<div id="followers-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-50 transition-opacity duration-300">
-    <div class="relative top-16 mx-auto p-8 w-full max-w-3xl bg-gradient-to-br from-gray-800 to-dark-surface-2 rounded-2xl shadow-2xl dark:border dark:border-gray-700">
+<div id="followers-modal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50 opacity-0 transition-all duration-300 ease-out">
+    <div class="relative top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-8 w-full max-w-4xl bg-gradient-to-br from-gray-800 to-indigo-950/50 rounded-2xl shadow-2xl border border-indigo-900/50 backdrop-blur-lg">
         <div class="flex justify-between items-center mb-8">
-            <h3 class="text-3xl font-extrabold text-white drop-shadow-lg">Followers</h3>
-            <button id="close-followers" class="text-gray-400 hover:text-white transition-colors">
-                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+            <h3 class="text-3xl font-bold text-white bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 tracking-tight">Followers</h3>
+            <button id="close-followers" aria-label="Close followers modal" class="text-gray-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"><svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
-        <div id="followers-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 max-h-[70vh] overflow-y-auto">
-            <!-- Followers will be dynamically loaded here -->
-        </div>
+        <div id="followers-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 max-h-[60vh] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-indigo-700 scrollbar-track-indigo-900"></div>
     </div>
 </div>
 
 <!-- Following Modal -->
-<div id="following-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-50 transition-opacity duration-300">
-    <div class="relative top-16 mx-auto p-8 w-full max-w-3xl bg-gradient-to-br from-gray-800 to-dark-surface-2 rounded-2xl shadow-2xl dark:border dark:border-gray-700">
+<div id="following-modal" class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50 opacity-0 transition-all duration-300 ease-out">
+    <div class="relative top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-8 w-full max-w-4xl bg-gradient-to-br from-gray-800 to-indigo-950/50 rounded-2xl shadow-2xl border border-indigo-900/50 backdrop-blur-lg">
         <div class="flex justify-between items-center mb-8">
-            <h3 class="text-3xl font-extrabold text-white drop-shadow-lg">Following</h3>
-            <button id="close-following" class="text-gray-400 hover:text-white transition-colors">
-                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+            <h3 class="text-3xl font-bold text-white bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 tracking-tight">Following</h3>
+            <button id="close-following" aria-label="Close following modal" class="text-gray-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"><svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
-        <div id="following-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 max-h-[70vh] overflow-y-auto">
-            <!-- Following will be dynamically loaded here -->
-        </div>
+        <div id="following-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 max-h-[60vh] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-indigo-700 scrollbar-track-indigo-900"></div>
     </div>
 </div>
 
 <style>
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .follower-card {
-        animation: fadeInUp 0.5s ease forwards;
-        animation-delay: calc(var(--index) * 0.1s);
-    }
+/* Premium Styles */
+.page-texture {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABdJREFUeNpiZmpmZmD+///fzALAAIMAP4QNZEFEmLYAAAAASUVORK5CYII=');
+    mask-image: radial-gradient(circle, rgba(0,0,0,0.8), transparent);
+    opacity: 0.06;
+}
+.dark .page-texture { opacity: 0.04; filter: invert(1); }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.follower-card { opacity: 0; animation: fadeInUp 0.4s ease forwards; animation-delay: calc(var(--index, 0) * 0.06s); }
+.scrollbar-thin::-webkit-scrollbar { width: 8px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(99, 102, 241, 0.7); border-radius: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(99, 102, 241, 0.9); }
 </style>
 
 <script>
+const followersModal = document.getElementById('followers-modal');
+const followingModal = document.getElementById('following-modal');
+const followersListDiv = document.getElementById('followers-list');
+const followingListDiv = document.getElementById('following-list');
+const closeFollowersBtn = document.getElementById('close-followers');
+const closeFollowingBtn = document.getElementById('close-following');
+
+function renderUserList(listElement, users, type) {
+    listElement.innerHTML = '';
+    if (!users || users.length === 0) {
+        listElement.innerHTML = `<p class="text-center text-lg text-gray-400 font-light col-span-full py-8">No ${type} yet.</p>`;
+        return;
+    }
+    users.forEach((user, index) => {
+        const div = document.createElement('div');
+        div.className = 'follower-card flex flex-col items-center p-4 rounded-lg bg-gray-900/50 hover:bg-indigo-900/50 border border-indigo-900/30 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 backdrop-blur-sm';
+        div.style.setProperty('--index', index);
+        const profilePicHtml = user.profile_picture
+            ? `<img src="/static/uploads/${user.profile_picture}" alt="${user.username}" class="h-full w-full object-cover rounded-full">`
+            : `<div class="h-full w-full rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-3xl font-bold text-white">${user.username ? user.username[0].toUpperCase() : '?'}</div>`;
+        div.innerHTML = `
+            <div class="relative h-20 w-20 rounded-full overflow-hidden border-4 border-indigo-500/50 p-0.5 shadow-lg">${profilePicHtml}</div>
+            <a href="/user/${user.username}" class="mt-3 text-md font-semibold text-white hover:text-amber-400 transition-colors truncate w-full text-center">${user.username}</a>
+            <p class="text-xs text-gray-400 font-light">${user.snippet_count} snippets</p>
+        `;
+        listElement.appendChild(div);
+    });
+}
+
+function openModal(modalElement) {
+    modalElement.classList.remove('hidden');
+    requestAnimationFrame(() => modalElement.classList.remove('opacity-0'));
+}
+
+function closeModal(modalElement) {
+    modalElement.classList.add('opacity-0');
+    setTimeout(() => modalElement.classList.add('hidden'), 300);
+}
+
 function showFollowers() {
+    openModal(followersModal);
+    followersListDiv.innerHTML = '<p class="js-loading-message text-center text-lg text-gray-400 font-light col-span-full py-8">Loading followers...</p>';
     fetch('/get_followers')
-        .then(response => response.json())
-        .then(data => {
-            const followersList = document.getElementById('followers-list');
-            followersList.innerHTML = '';
-            if (data.followers.length === 0) {
-                followersList.innerHTML = '<p class="text-center text-lg text-gray-400 col-span-full py-8">No followers yet.</p>';
-            } else {
-                data.followers.forEach((follower, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'follower-card flex flex-col items-center p-4 rounded-full bg-gray-900 bg-opacity-50 hover:bg-opacity-70 transition-all duration-300 transform hover:scale-105';
-                    div.style.setProperty('--index', index);
-                    div.innerHTML = `
-                        <div class="relative h-20 w-20 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-blue-500 to-purple-500 p-1 shadow-lg">
-                            ${follower.profile_picture 
-                                ? `<img src="/static/uploads/${follower.profile_picture}" alt="${follower.username}" class="h-full w-full object-cover rounded-full">`
-                                : '<div class="h-full w-full rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"><span class="text-3xl font-bold text-gray-600 dark:text-gray-300">${follower.username[0].toUpperCase()}</span></div>'
-                            }
-                        </div>
-                        <a href="/user/${follower.username}" class="mt-3 text-lg font-bold text-white drop-shadow-md hover:text-amber-400 transition-colors">${follower.username}</a>
-                        <p class="text-xs text-gray-400">${follower.snippet_count} snippets</p>
-                    `;
-                    followersList.appendChild(div);
-                });
-            }
-            document.getElementById('followers-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('followers-modal').classList.add('opacity-100'), 10);
-        })
-        .catch(error => console.error('Error fetching followers:', error));
+        .then(response => { if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`); return response.json(); })
+        .then(data => renderUserList(followersListDiv, data.followers, 'followers'))
+        .catch(error => {
+            console.error('Error fetching followers:', error);
+            followersListDiv.innerHTML = '<p class="text-center text-lg text-red-400 font-light col-span-full py-8">Could not load followers.</p>';
+        });
 }
 
 function showFollowing() {
+    openModal(followingModal);
+    followingListDiv.innerHTML = '<p class="js-loading-message text-center text-lg text-gray-400 font-light col-span-full py-8">Loading following...</p>';
     fetch('/get_following')
-        .then(response => response.json())
-        .then(data => {
-            const followingList = document.getElementById('following-list');
-            followingList.innerHTML = '';
-            if (data.following.length === 0) {
-                followingList.innerHTML = '<p class="text-center text-lg text-gray-400 col-span-full py-8">Not following anyone yet.</p>';
-            } else {
-                data.following.forEach((following, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'follower-card flex flex-col items-center p-4 rounded-full bg-gray-900 bg-opacity-50 hover:bg-opacity-70 transition-all duration-300 transform hover:scale-105';
-                    div.style.setProperty('--index', index);
-                    div.innerHTML = `
-                        <div class="relative h-20 w-20 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-blue-500 to-purple-500 p-1 shadow-lg">
-                            ${following.profile_picture 
-                                ? `<img src="/static/uploads/${following.profile_picture}" alt="${following.username}" class="h-full w-full object-cover rounded-full">`
-                                : '<div class="h-full w-full rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center"><span class="text-3xl font-bold text-gray-600 dark:text-gray-300">${following.username[0].toUpperCase()}</span></div>'
-                            }
-                        </div>
-                        <a href="/user/${following.username}" class="mt-3 text-lg font-bold text-white drop-shadow-md hover:text-amber-400 transition-colors">${following.username}</a>
-                        <p class="text-xs text-gray-400">${following.snippet_count} snippets</p>
-                    `;
-                    followingList.appendChild(div);
-                });
-            }
-            document.getElementById('following-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('following-modal').classList.add('opacity-100'), 10);
-        })
-        .catch(error => console.error('Error fetching following:', error));
+        .then(response => { if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`); return response.json(); })
+        .then(data => renderUserList(followingListDiv, data.following, 'following'))
+        .catch(error => {
+            console.error('Error fetching following:', error);
+            followingListDiv.innerHTML = '<p class="text-center text-lg text-red-400 font-light col-span-full py-8">Could not load following list.</p>';
+        });
 }
 
-document.getElementById('close-followers').addEventListener('click', () => {
-    document.getElementById('followers-modal').classList.remove('opacity-100');
-    setTimeout(() => document.getElementById('followers-modal').classList.add('hidden'), 300);
+closeFollowersBtn.addEventListener('click', () => closeModal(followersModal));
+closeFollowingBtn.addEventListener('click', () => closeModal(followingModal));
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        if (!followersModal.classList.contains('hidden')) closeModal(followersModal);
+        if (!followingModal.classList.contains('hidden')) closeModal(followingModal);
+    }
+});
+[followersModal, followingModal].forEach(modal => {
+    modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(modal); });
 });
 
-document.getElementById('close-following').addEventListener('click', () => {
-    document.getElementById('following-modal').classList.remove('opacity-100');
-    setTimeout(() => document.getElementById('following-modal').classList.add('hidden'), 300);
-});
+const searchInput = document.getElementById('snippet-search');
+const snippetCards = document.querySelectorAll('.grid > .snippet-card');
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        snippetCards.forEach(card => {
+            const title = card.querySelector('.snippet-title').textContent.toLowerCase();
+            card.style.display = title.includes(searchTerm) ? '' : 'none';
+        });
+    });
+}
 </script>
 {% endblock %}

@@ -1,295 +1,227 @@
-    {% extends "base.html" %}
+{% extends "base.html" %}
 
-    {% block head_extra %}
-        {# Use the same Prism themes as Explore/Create/Edit if possible #}
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" media="(prefers-color-scheme: dark)"/>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)"/>
-        {# Optional: Add Line Numbers Plugin CSS #}
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+{% block head_extra %}
+    {# Prism Themes #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" media="(prefers-color-scheme: dark)"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
 
-        {# Fonts #}
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    {% endblock %}
+    {# Premium Fonts: Manrope + JetBrains Mono #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+{% endblock %}
 
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/20 dark:from-gray-900 dark:via-gray-950 dark:to-indigo-900/30 text-gray-900 dark:text-gray-100 font-['Manrope',_sans-serif] antialiased py-16 sm:py-20 relative isolate overflow-hidden">
+    {# Premium Background: Radial Gradient + Noise #}
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.15)_0%,_rgba(0,0,0,0)_70%)] dark:bg-[radial-gradient(ellipse_at_center,_rgba(79,70,229,0.1)_0%,_rgba(0,0,0,0)_70%)] page-texture" aria-hidden="true"></div>
 
-    {% block content %}
-    {# Page container #}
-    <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950 text-slate-800 dark:text-zinc-200 font-['Inter',_sans-serif] antialiased py-12 sm:py-16">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8"> {# Slightly narrower than Explore for focus #}
-
-            <!-- Code Block Section -->
-            <div class="bg-white dark:bg-black rounded-xl shadow-lg border border-slate-200 dark:border-zinc-800 overflow-hidden mb-8 sm:mb-10">
-                {# Header within the code block card #}
-                <div class="flex flex-wrap justify-between items-center gap-4 px-5 py-3 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-black/50">
-                    <div class="flex items-center gap-3">
-                        <span class="snippet-language inline-block px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300 border border-sky-200 dark:border-sky-700/50">
-                            {{ snippet[3] | default('?') }} {# Language - Index 3 #}
-                        </span>
-                        <span class="text-xs text-slate-500 dark:text-zinc-500 hidden sm:inline">
-                            {{ snippet[2] | length }} characters
-                        </span>
-                    </div>
-                    {# Action Buttons #}
-                    <div class="flex items-center space-x-3">
-                        {# Edit/Delete only if user owns the snippet #}
-                        {% if session['user_id'] == snippet[7] %} {# Assuming snippet[7] is user_id #}
-                            <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" title="Edit Snippet"
-                                class="inline-flex items-center p-1.5 text-slate-500 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 rounded-md transition-colors duration-200 shadow-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"> <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                            </a>
-                            <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this snippet permanently?');">
-                                <button type="submit" title="Delete Snippet"
-                                        class="inline-flex items-center p-1.5 text-slate-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 rounded-md transition-colors duration-200 shadow-sm">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"> <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                                </button>
-                            </form>
-                        {% endif %}
-                        <button type="button" id="copy-button" title="Copy Code"
-                                class="inline-flex items-center p-1.5 text-slate-500 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 rounded-md transition-colors duration-200 shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 icon-copy" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 icon-copied hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
-                        </button>
-                    </div>
-                </div>
-                {# Code display using PrismJS #}
-                <div class="code-block-wrapper overflow-x-auto">
-                    {# Add line-numbers class for the plugin #}
-                    <pre class="line-numbers !m-0 !p-6"><code id="codeBlock" class="language-{{ snippet[3] | default('plain') }}">{{ snippet[2] }}</code></pre> {# Code - Index 2 #}
-                </div>
-            </div>
-
-            <!-- Details Section -->
-            <section aria-labelledby="snippet-details-heading" class="bg-white dark:bg-black p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 dark:border-zinc-800">
-                <h1 id="snippet-details-heading" class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3 sm:mb-4 leading-tight">
-                    {{ snippet[1] | default('Snippet') }} {# Title - Index 1 #}
-                </h1>
-
-                {% if snippet[4] %} {# Description - Index 4 #}
-                <p class="text-slate-600 dark:text-zinc-400 text-base leading-relaxed mb-6 prose prose-slate dark:prose-invert max-w-none">
-                    {{ snippet[4] | safe }} {# Use safe filter if description might contain HTML, otherwise remove #}
-                </p>
-                {% endif %}
-
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-sm border-t border-slate-200 dark:border-zinc-700 pt-5">
-                    <div class="flex items-center space-x-3">
-                        <span class="text-slate-500 dark:text-zinc-500">Author:</span>
-                        <a href="{{ url_for('user_profile', username=snippet[6]) }}" {# Assuming snippet[6] is username #}
-                        class="inline-flex items-center gap-2 group">
-                            {# Placeholder Avatar - replace with actual avatar logic if available #}
-                            <span class="h-6 w-6 rounded-full bg-gradient-to-tr from-sky-100 to-cyan-100 dark:from-sky-900 dark:to-cyan-900 text-sky-700 dark:text-sky-300 text-xs font-semibold flex items-center justify-center group-hover:ring-2 group-hover:ring-sky-400 transition">
-                            {{ snippet[6][0]|upper if snippet[6] else '?' }}
-                            </span>
-                            <span class="font-medium text-slate-700 dark:text-zinc-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                                {{ snippet[6] | default('Unknown') }}
-                            </span>
-                        </a>
-                    </div>
-                    <span class="text-slate-500 dark:text-zinc-500 flex-shrink-0">
-                        Created: {{ snippet[5][:10] if snippet[5] else 'Unknown Date' }} {# Created Date - Index 5 #}
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+        <!-- Code Block Section -->
+        <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 rounded-2xl shadow-lg border border-gray-200/30 dark:border-indigo-900/30 overflow-hidden mb-10 backdrop-blur-sm">
+            <div class="flex flex-wrap justify-between items-center gap-4 px-6 py-4 border-b border-gray-200/20 dark:border-indigo-900/30 bg-gray-50/50 dark:bg-indigo-950/20">
+                <div class="flex items-center gap-4">
+                    <span class="snippet-language inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold bg-indigo-100/80 dark:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 shadow-sm">
+                        {{ snippet[3] | default('?') }}
+                    </span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-light hidden sm:inline">
+                        {{ snippet[2] | length }} characters
                     </span>
                 </div>
-            </section>
-
-            <!-- Bottom Navigation / Actions -->
-            <nav class="mt-8 sm:mt-12 flex justify-between items-center">
-                <a href="{{ url_for('explore') }}"
-                class="inline-flex items-center text-sm font-medium text-slate-600 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors group">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-                    Back to Explore
-                </a>
-                {% if 'user_id' in session %} {# Share only relevant if logged in? Adjust if needed #}
-                    <button type="button" id="share-button" aria-label="Share snippet"
-                            class="inline-flex items-center text-sm font-medium text-slate-600 dark:text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" /></svg>
-                        <span class="button-text">Share</span> {# Added span for feedback #}
+                <div class="flex items-center space-x-4">
+                    {% if session['user_id'] == snippet[7] %}
+                        <a href="{{ url_for('edit_snippet', id=snippet[0]) }}" title="Edit Snippet" class="group inline-flex items-center p-2 text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 hover:bg-indigo-100 dark:hover:bg-indigo-900 border border-gray-200/50 dark:border-indigo-900/50 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-out transform hover:scale-105">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                        </a>
+                        <form action="{{ url_for('delete_snippet', id=snippet[0]) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this snippet permanently?');">
+                            <button type="submit" title="Delete Snippet" class="group inline-flex items-center p-2 text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 hover:bg-red-100 dark:hover:bg-red-900/50 border border-gray-200/50 dark:border-indigo-900/50 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-out transform hover:scale-105">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </form>
+                    {% endif %}
+                    <button type="button" id="copy-button" title="Copy Code" class="group inline-flex items-center p-2 text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-gray-900/80 hover:bg-indigo-100 dark:hover:bg-indigo-900 border border-gray-200/50 dark:border-indigo-900/50 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-out transform hover:scale-105">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 icon-copy group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 icon-copied hidden text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                     </button>
-                {% endif %}
-            </nav>
+                </div>
+            </div>
+            <div class="code-block-wrapper overflow-x-auto scrollbar-thin">
+                <pre class="line-numbers !m-0 !p-6 bg-transparent"><code id="codeBlock" class="language-{{ snippet[3] | default('plain') }}">{{ snippet[2] }}</code></pre>
+            </div>
+        </div>
 
-        </div> {# End max-w container #}
-    </div> {# End page wrapper #}
-    {% endblock %}
+        <!-- Details Section -->
+        <section aria-labelledby="snippet-details-heading" class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 p-8 rounded-2xl shadow-lg border border-gray-200/30 dark:border-indigo-900/30 backdrop-blur-sm">
+            <h1 id="snippet-details-heading" class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4 bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 tracking-tight">
+                {{ snippet[1] | default('Snippet') }}
+            </h1>
+            {% if snippet[4] %}
+                <p class="text-gray-600 dark:text-gray-300 text-base font-light leading-relaxed mb-6 prose prose-indigo dark:prose-invert max-w-none">
+                    {{ snippet[4] | safe }}
+                </p>
+            {% endif %}
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-sm border-t border-gray-200/20 dark:border-indigo-900/30 pt-6">
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-500 dark:text-gray-400 font-medium">Author:</span>
+                    <a href="{{ url_for('user_profile', username=snippet[6]) }}" class="inline-flex items-center gap-3 group">
+                        <span class="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-100 to-purple-100 dark:from-indigo-800 dark:to-purple-800 text-indigo-700 dark:text-indigo-300 text-sm font-semibold flex items-center justify-center group-hover:ring-2 group-hover:ring-indigo-400 transition-all duration-200 shadow-sm">
+                            {{ snippet[6][0]|upper if snippet[6] else '?' }}
+                        </span>
+                        <span class="font-semibold text-gray-700 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                            {{ snippet[6] | default('Unknown') }}
+                        </span>
+                    </a>
+                </div>
+                <span class="text-gray-500 dark:text-gray-400 font-light flex-shrink-0">
+                    Created: {{ snippet[5][:10] if snippet[5] else 'Unknown Date' }}
+                </span>
+            </div>
+        </section>
 
+        <!-- Bottom Navigation / Actions -->
+        <nav class="mt-12 flex justify-between items-center">
+            <a href="{{ url_for('explore') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                Back to Explore
+            </a>
+            {% if 'user_id' in session %}
+                <button type="button" id="share-button" aria-label="Share snippet" class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" /></svg>
+                    <span class="button-text">Share</span>
+                </button>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+{% endblock %}
 
-    {% block styles %} {# Inherit block from parent or define if needed #}
-    {# This block replaces the previous one for CSS overrides #}
-    <style>
-        {# Ensure Prism themes load correctly for dark/light #}
-        @media (prefers-color-scheme: light), (prefers-color-scheme: no-preference) {
-            @import url("https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.min.css");
-        }
-        @media (prefers-color-scheme: dark) {
-            @import url("https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css");
-        }
+{% block styles %}
+<style>
+/* Premium Styles */
+.page-texture {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABdJREFUeNpiZmpmZmD+///fzALAAIMAP4QNZEFEmLYAAAAASUVORK5CYII=');
+    mask-image: radial-gradient(circle, rgba(0,0,0,0.8), transparent);
+    opacity: 0.06;
+}
+.dark .page-texture { opacity: 0.04; filter: invert(1); }
 
-        /* --- Prism Base Style Overrides for Premium Look --- */
-        .code-block-wrapper pre[class*="language-"].line-numbers {
-            background: transparent !important; /* Let card handle background */
-            margin: 0 !important;
-            padding: 1.5rem 1rem 1.5rem 3.5rem !important; /* Adjust left padding for line numbers */
-            border-radius: 0 !important; /* No radius inside wrapper */
-            border: none !important; /* No border on pre itself */
-            box-shadow: none !important;
-            /* Ensure overflow works with line numbers */
-            position: relative;
-            overflow: auto;
-        }
+/* Prism Overrides */
+.code-block-wrapper pre[class*="language-"].line-numbers {
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 1.5rem 1rem 1.5rem 3.5rem !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: relative;
+    overflow: auto;
+    transition: background 0.3s ease;
+}
 
-        .code-block-wrapper pre[class*="language-"] code[class*="language-"] {
-            font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-            font-size: 0.875rem !important; /* 14px */
-            line-height: 1.7 !important; /* Increase line height slightly */
-            text-shadow: none !important;
-            background: none !important; /* Code tag transparent */
-            white-space: pre !important; /* Allow normal pre formatting */
-            word-wrap: normal !important;
-            word-break: normal !important;
-            display: block; /* Ensure code block takes space */
-            color: inherit; /* Inherit color from theme */
-        }
+.code-block-wrapper pre[class*="language-"] code[class*="language-"] {
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-size: 0.9rem !important;
+    line-height: 1.8 !important;
+    text-shadow: none !important;
+    background: none !important;
+    white-space: pre !important;
+    word-wrap: normal !important;
+    word-break: normal !important;
+    display: block;
+    color: inherit;
+}
 
-        /* Prism Line Number Styling */
-        .line-numbers .line-numbers-rows {
-            position: absolute;
-            left: 0;
-            top: 1.5rem; /* Match top padding */
-            width: 3em; /* Fixed width for numbers */
-            padding-right: 1em;
-            border-right: 1px solid theme('colors.slate.200');
-            user-select: none;
-            opacity: 0.5;
-            text-align: right;
-            font-size: 0.8rem;
-        }
-        .dark .line-numbers .line-numbers-rows {
-            border-right-color: theme('colors.zinc.700');
-        }
-        .line-numbers-rows > span::before {
-            color: theme('colors.slate.400'); /* Adjust number color */
-            text-shadow: none !important;
-        }
-        .dark .line-numbers-rows > span::before {
-            color: theme('colors.zinc.500');
-        }
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    left: 0;
+    top: 1.5rem;
+    width: 3em;
+    padding-right: 1em;
+    border-right: 1px solid rgba(229, 231, 235, 0.3);
+    user-select: none;
+    opacity: 0.6;
+    text-align: right;
+    font-size: 0.85rem;
+}
+.dark .line-numbers .line-numbers-rows { border-right-color: rgba(55, 65, 81, 0.3); }
+.line-numbers-rows > span::before { color: #94a3b8; text-shadow: none !important; }
+.dark .line-numbers-rows > span::before { color: #6b7280; }
 
+/* Custom Scrollbar */
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(99, 102, 241, 0.4); border-radius: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(99, 102, 241, 0.6); }
 
-        /* Custom scrollbar */
-        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.4); border-radius: 3px;}
-        .dark .scrollbar-thin::-webkit-scrollbar-thumb { background-color: rgba(113, 113, 122, 0.4); }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(156, 163, 175, 0.6); }
-        .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: rgba(113, 113, 122, 0.6); }
+/* Button Feedback */
+button.copied-feedback .icon-copy { display: none; }
+button.copied-feedback .icon-copied { display: inline-block !important; }
+button.copied-feedback.share-feedback .button-text { color: #10b981; }
+</style>
+{% endblock %}
 
-        /* Style for Copy/Share feedback */
-        button.copied-feedback .icon-copy,
-        button.copied-feedback .button-text {
-            display: none;
-        }
-        button.copied-feedback .icon-copied {
-            display: inline-block !important; /* Show copied icon */
-            color: theme('colors.emerald.500');
-        }
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    Prism.highlightAll();
 
-    </style>
-    {% endblock %}
+    const copyButton = document.getElementById('copy-button');
+    const codeBlock = document.getElementById('codeBlock');
+    const shareButton = document.getElementById('share-button');
 
-    {% block scripts %}
-    {# Prism JS - Core, Autoloader, Line Numbers Plugin #}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-
-    {# Reuse explore.js only if it handles voting/following cleanly - otherwise custom script #}
-    {# <script src="{{ url_for('static', filename='js/explore.js') }}"></script> #}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Apply highlighting with line numbers
-            // Make sure the <pre> has the line-numbers class added automatically by plugin or manually
-            Prism.highlightAll(); // Autoloader should find languages
-
-            const copyButton = document.getElementById('copy-button');
-            const codeBlock = document.getElementById('codeBlock');
-            const shareButton = document.getElementById('share-button');
-
-            // Copy Button Logic
-            if (copyButton && codeBlock) {
-                copyButton.addEventListener('click', () => {
-                    if (!navigator.clipboard) {
-                        alert('Clipboard API not supported by your browser.'); return;
-                    }
-                    const codeToCopy = codeBlock.textContent || '';
-                    navigator.clipboard.writeText(codeToCopy).then(() => {
-                        const iconCopy = copyButton.querySelector('.icon-copy');
-                        const iconCopied = copyButton.querySelector('.icon-copied');
-                        iconCopy.style.display = 'none';
-                        iconCopied.classList.remove('hidden');
-                        iconCopied.style.display = 'inline-block';
-
-                        // Revert after 2 seconds
-                        setTimeout(() => {
-                            iconCopy.style.display = 'inline-block';
-                            iconCopied.style.display = 'none';
-                            iconCopied.classList.add('hidden');
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy code: ', err);
-                        alert('Failed to copy code.');
-                    });
-                });
+    if (copyButton && codeBlock) {
+        copyButton.addEventListener('click', () => {
+            if (!navigator.clipboard) {
+                alert('Clipboard API not supported by your browser.');
+                return;
             }
-
-            // Share Button Logic
-            if (shareButton) {
-                const shareButtonText = shareButton.querySelector('.button-text');
-                const originalShareText = shareButtonText ? shareButtonText.textContent : 'Share';
-
-                shareButton.addEventListener('click', () => {
-                    const urlToShare = window.location.href; // Get current URL
-                    const snippetTitle = document.querySelector('h1')?.textContent || 'Code Snippet'; // Get title
-
-                    if (navigator.share) { // Use Web Share API if available
-                        navigator.share({
-                            title: snippetTitle,
-                            text: `Check out this code snippet: ${snippetTitle}`,
-                            url: urlToShare,
-                        })
-                        .then(() => console.log('Successful share'))
-                        .catch((error) => console.log('Error sharing', error));
-                    } else if (navigator.clipboard) { // Fallback to copying link
-                        navigator.clipboard.writeText(urlToShare).then(() => {
-                            if (shareButtonText) shareButtonText.textContent = 'Link Copied!';
-                            shareButton.classList.add('copied-feedback'); // Needs styling in CSS
-                            setTimeout(() => {
-                                if (shareButtonText) shareButtonText.textContent = originalShareText;
-                                shareButton.classList.remove('copied-feedback');
-                            }, 2500);
-                        }).catch(err => {
-                            console.error('Failed to copy share link: ', err);
-                            alert(`Share failed. Copy link manually: ${urlToShare}`);
-                        });
-                    } else {
-                        // Final fallback
-                        alert(`Share not supported. Copy link manually: ${urlToShare}`);
-                    }
-                });
-            }
-
-            // Confirm Delete (handled by onsubmit now, keep JS version if preferred)
-            /*
-            const deleteForms = document.querySelectorAll('.delete-form');
-            deleteForms.forEach(form => {
-                form.addEventListener('submit', function(event) {
-                    if (!confirm('Are you sure you want to delete this snippet? This action cannot be undone.')) {
-                        event.preventDefault();
-                    }
-                });
+            const codeToCopy = codeBlock.textContent || '';
+            navigator.clipboard.writeText(codeToCopy).then(() => {
+                copyButton.classList.add('copied-feedback');
+                setTimeout(() => copyButton.classList.remove('copied-feedback'), 2000);
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                alert('Failed to copy code.');
             });
-            */
-        }); // End DOMContentLoaded
-    </script>
-    {% endblock %}
+        });
+    }
+
+    if (shareButton) {
+        const shareButtonText = shareButton.querySelector('.button-text');
+        const originalShareText = shareButtonText ? shareButtonText.textContent : 'Share';
+
+        shareButton.addEventListener('click', () => {
+            const urlToShare = window.location.href;
+            const snippetTitle = document.querySelector('h1')?.textContent || 'Code Snippet';
+
+            if (navigator.share) {
+                navigator.share({
+                    title: snippetTitle,
+                    text: `Check out this code snippet: ${snippetTitle}`,
+                    url: urlToShare,
+                }).catch((error) => console.log('Error sharing', error));
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(urlToShare).then(() => {
+                    shareButton.classList.add('copied-feedback', 'share-feedback');
+                    if (shareButtonText) shareButtonText.textContent = 'Link Copied!';
+                    setTimeout(() => {
+                        shareButton.classList.remove('copied-feedback', 'share-feedback');
+                        if (shareButtonText) shareButtonText.textContent = originalShareText;
+                    }, 2500);
+                }).catch(err => {
+                    console.error('Failed to copy share link: ', err);
+                    alert(`Share failed. Copy link manually: ${urlToShare}`);
+                });
+            } else {
+                alert(`Share not supported. Copy link manually: ${urlToShare}`);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,59 +1,59 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="fixed inset-0 flex flex-col z-50 bg-white dark:bg-black">
+<div class="fixed inset-0 flex flex-col z-50 bg-gradient-to-br from-gray-50 via-indigo-50/20 to-gray-100 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-800 font-['Manrope',_sans-serif] antialiased overflow-hidden">
     <!-- Header Section -->
-    <header class="bg-white dark:bg-black border-b dark:border-gray-700 border-gray-200 py-5 shadow-sm">
+    <header class="bg-white/80 dark:bg-gray-900/80 border-b border-gray-200/20 dark:border-indigo-900/30 py-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(99,102,241,0.1)] backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <h1 class="text-3xl font-bold text-black dark:text-white">
+            <div class="flex items-center space-x-3">
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 tracking-tight">
                     Create New Snippet
                 </h1>
-                <span class="inline-flex h-2 w-2 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-500 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-gray-600"></span>
+                <span class="inline-flex h-2.5 w-2.5 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
                 </span>
             </div>
             <button type="button" id="preview-toggle"
-                class="group inline-flex items-center px-4 py-2 border-2 dark:border-gray-700 border-gray-300 rounded-xl 
-                      text-sm font-medium text-black dark:text-white hover:text-gray-600 dark:hover:text-gray-400 
-                      transition-all duration-300 hover:shadow-lg hover:shadow-gray-500/20 hover:bg-gray-100 dark:hover:bg-gray-900 
-                      hover:border-gray-500 dark:hover:border-gray-600">
+                class="group inline-flex items-center px-5 py-2.5 bg-white dark:bg-gray-900 border-2 border-gray-200/50 dark:border-indigo-900/50 rounded-xl 
+                      text-sm font-semibold text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-200 
+                      transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/50 
+                      hover:border-indigo-400 dark:hover:border-indigo-600 transform hover:scale-105">
                 <svg class="h-5 w-5 mr-2 transition-transform duration-300 group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
                           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
                 <span class="relative">
                     Preview
-                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-600 transition-all duration-300 group-hover:w-full"></span>
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 transition-all duration-300 group-hover:w-full"></span>
                 </span>
             </button>
         </div>
     </header>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex overflow-hidden p-4">
-        <form method="POST" id="snippet-form" action="{{ url_for('new_snippet') }}" class="flex w-full h-full rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-black border dark:border-gray-700 border-gray-200">
+    <div class="flex-1 flex overflow-hidden p-6">
+        <form method="POST" id="snippet-form" action="{{ url_for('new_snippet') }}" class="flex w-full h-full rounded-3xl overflow-hidden shadow-2xl dark:shadow-[0_15px_60px_rgba(99,102,241,0.15)] bg-white/90 dark:bg-gray-900/90 border border-gray-200/20 dark:border-indigo-900/30 backdrop-blur-md">
             <!-- Left Side: Form Controls -->
-            <aside class="w-1/4 bg-white dark:bg-black p-6 border-r dark:border-gray-700 border-gray-200 space-y-6 overflow-y-auto">
+            <aside class="w-1/3 bg-transparent p-8 border-r border-gray-200/20 dark:border-indigo-900/30 space-y-8 overflow-y-auto">
                 <!-- Title Field -->
                 <div class="relative group">
-                    <label for="title" class="block text-sm font-medium mb-1.5 text-black dark:text-white transition-all duration-300 group-focus-within:text-gray-600 dark:group-focus-within:text-gray-400">Title</label>
+                    <label for="title" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 transition-all duration-300 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400">Title</label>
                     <input type="text" name="title" id="title" required
-                           class="block w-full bg-white dark:bg-gray-900 border-2 dark:border-gray-700 border-gray-300 rounded-xl shadow-sm py-3 px-4 text-black dark:text-white
-                                 focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition-all duration-300 hover:shadow-md placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                           class="block w-full bg-white/80 dark:bg-gray-900/80 border-2 border-gray-200/50 dark:border-indigo-900/50 rounded-xl shadow-md py-3.5 px-5 text-gray-900 dark:text-gray-100
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 transition-all duration-300 hover:shadow-lg placeholder:text-gray-400 dark:placeholder:text-gray-500"
                            placeholder="Enter a descriptive title">
                     <div class="text-xs text-red-400 mt-1.5 hidden validation-message"></div>
                 </div>
 
                 <!-- Language Selection -->
                 <div class="relative group">
-                    <label for="language" class="block text-sm font-medium mb-1.5 text-black dark:text-white transition-all duration-300 group-focus-within:text-gray-600 dark:group-focus-within:text-gray-400">Language</label>
+                    <label for="language" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 transition-all duration-300 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400">Language</label>
                     <div class="relative">
                         <select name="language" id="language" required
-                                class="appearance-none block w-full bg-white dark:bg-gray-900 border-2 dark:border-gray-700 border-gray-300 rounded-xl shadow-sm py-3 px-4 text-black dark:text-white
-                                      focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition-all duration-300 hover:shadow-md">
+                                class="appearance-none block w-full bg-white/80 dark:bg-gray-900/80 border-2 border-gray-200/50 dark:border-indigo-900/50 rounded-xl shadow-md py-3.5 px-5 text-gray-900 dark:text-gray-100
+                                      focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 transition-all duration-300 hover:shadow-lg">
                             <option value="" disabled selected>Select a language</option>
                             <option value="python">Python</option>
                             <option value="javascript">JavaScript</option>
@@ -69,9 +69,9 @@
                             <option value="kotlin">Kotlin</option>
                             <option value="go">Go</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-700 dark:text-gray-300">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-indigo-500 dark:text-indigo-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
                             </svg>
                         </div>
                     </div>
@@ -80,12 +80,12 @@
 
                 <!-- Description Field -->
                 <div class="relative group">
-                    <label for="description" class="block text-sm font-medium mb-1.5 text-black dark:text-white transition-all duration-300 group-focus-within:text-gray-600 dark:group-focus-within:text-gray-400">
+                    <label for="description" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 transition-all duration-300 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400">
                         Description <span class="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
                     </label>
                     <textarea name="description" id="description" rows="3"
-                              class="block w-full bg-white dark:bg-gray-900 border-2 dark:border-gray-700 border-gray-300 rounded-xl shadow-sm py-3 px-4 text-black dark:text-white
-                                    focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition-all duration-300 hover:shadow-md placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                              class="block w-full bg-white/80 dark:bg-gray-900/80 border-2 border-gray-200/50 dark:border-indigo-900/50 rounded-xl shadow-md py-3.5 px-5 text-gray-900 dark:text-gray-100
+                                    focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 transition-all duration-300 hover:shadow-lg placeholder:text-gray-400 dark:placeholder:text-gray-500"
                               placeholder="Briefly describe what this code does"></textarea>
                     <div class="text-xs text-gray-600 dark:text-gray-300 mt-1.5 flex justify-end">
                         <span id="description-length">0</span>/200
@@ -94,39 +94,37 @@
 
                 <!-- Tags Field -->
                 <div class="relative group">
-                    <label for="tags" class="block text-sm font-medium mb-1.5 text-black dark:text-white transition-all duration-300 group-focus-within:text-gray-600 dark:group-focus-within:text-gray-400">
+                    <label for="tags" class="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 transition-all duration-300 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400">
                         Tags <span class="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
                     </label>
                     <input type="text" name="tags" id="tags"
-                           class="block w-full bg-white dark:bg-gray-900 border-2 dark:border-gray-700 border-gray-300 rounded-xl shadow-sm py-3 px-4 text-black dark:text-white
-                                 focus:outline-none focus:ring-2 focus:ring-gray-500/50 focus:border-gray-500 transition-all duration-300 hover:shadow-md placeholder:text-gray-500 dark:placeholder:text-gray-400"
-                           placeholder="e.g. algorithm, sorting, function">
+                           class="block w-full bg-white/80 dark:bg-gray-900/80 border-2 border-gray-200/50 dark:border-indigo-900/50 rounded-xl shadow-md py-3.5 px-5 text-gray-900 dark:text-gray-100
+                                 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 transition-all duration-300 hover:shadow-lg placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                           placeholder="e.g., algorithm, sorting, function">
                     <div class="text-xs text-gray-600 dark:text-gray-300 mt-1.5">
                         Separate tags with commas
                     </div>
                 </div>
 
                 <!-- Options and Submit Button -->
-                <div class="pt-4 space-y-4">
+                <div class="pt-6 space-y-6">
                     <div class="flex items-center space-x-3">
-                        <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                        <div class="relative inline-block w-12 h-6 align-middle select-none">
                             <input type="checkbox" id="private" name="private"
                                    class="absolute opacity-0 w-0 h-0 peer">
-                            <div class="h-6 w-10 bg-gray-300 peer-focus:outline-none rounded-full peer 
-                                       dark:bg-gray-700 peer-checked:after:translate-x-4 
+                            <div class="h-6 w-12 bg-gray-200 peer-focus:outline-none rounded-full peer 
+                                       dark:bg-gray-800 peer-checked:after:translate-x-6 
                                        after:content-[''] after:absolute after:top-0.5 after:left-0.5 
                                        after:bg-white after:rounded-full after:h-5 after:w-5 
-                                       after:transition-all peer-checked:bg-gray-600"></div>
+                                       after:transition-all peer-checked:bg-indigo-500 dark:peer-checked:bg-indigo-400 shadow-md"></div>
                         </div>
-                        <label for="private" class="text-sm text-black dark:text-white">Make snippet private</label>
+                        <label for="private" class="text-sm font-medium text-gray-800 dark:text-gray-200">Make snippet private</label>
                     </div>
-                    
                     <button type="submit" 
-                            class="w-full inline-flex justify-center items-center px-6 py-3.5 bg-gray-800 dark:bg-gray-200 hover:bg-gray-700 dark:hover:bg-gray-300 
-                                  rounded-xl text-sm font-medium text-white dark:text-black shadow-lg shadow-gray-500/20
-                                  transition-all duration-300 hover:shadow-xl hover:shadow-gray-600/30 hover:-translate-y-1">
+                            class="w-full inline-flex justify-center items-center px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 
+                                  rounded-xl text-sm font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 transform hover:scale-105">
                         <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4" />
                         </svg>
                         Create Snippet
                     </button>
@@ -134,36 +132,36 @@
             </aside>
 
             <!-- Right Side: Code Editor -->
-            <main class="w-3/4 bg-white dark:bg-black relative flex flex-col flex-1">
+            <main class="w-2/3 bg-transparent relative flex flex-col flex-1">
                 <!-- Code Editor Header -->
-                <div class="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700 border-gray-200">
-                    <label for="code" class="text-sm font-medium text-black dark:text-white">Code</label>
+                <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200/20 dark:border-indigo-900/30">
+                    <label for="code" class="text-sm font-semibold text-gray-800 dark:text-gray-200">Code</label>
                 </div>
                 
                 <!-- Hidden textarea for form submission -->
                 <textarea name="code" id="code" class="hidden"></textarea>
                 
                 <!-- CodeMirror Editor Container -->
-                <div id="code-editor" class="flex-1 w-full border dark:border-gray-700 border-gray-200 rounded-b-xl shadow-md overflow-hidden"></div>
+                <div id="code-editor" class="flex-1 w-full border border-gray-200/20 dark:border-indigo-900/30 rounded-b-2xl shadow-lg overflow-hidden"></div>
                 <div class="text-xs text-red-400 mt-1.5 hidden validation-message"></div>
             </main>
         </form>
     </div>
 
     <!-- Preview Modal -->
-    <div id="preview-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-50">
-        <div class="bg-white dark:bg-black rounded-2xl p-8 max-w-4xl w-full mx-4 transform transition-all duration-300 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-black dark:text-white">
+    <div id="preview-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md hidden items-center justify-center z-50">
+        <div class="bg-white/90 dark:bg-gray-900/90 rounded-3xl p-10 max-w-5xl w-full mx-6 transform transition-all duration-300 shadow-2xl border border-gray-200/20 dark:border-indigo-900/30 backdrop-blur-md scale-95 opacity-0">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-3xl font-bold text-gray-900 dark:text-white bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 tracking-tight">
                     Preview
                 </h3>
-                <button id="close-preview" class="text-gray-700 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-400 transition-colors duration-200">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <button id="close-preview" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300">
+                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            <div id="preview-content" class="space-y-6 text-black dark:text-white rounded-xl overflow-hidden shadow-lg border-2 dark:border-gray-700 border-gray-200 p-4">
+            <div id="preview-content" class="space-y-6 text-gray-900 dark:text-gray-100 rounded-xl overflow-hidden shadow-lg border border-gray-200/20 dark:border-indigo-900/30 p-6 bg-white/80 dark:bg-gray-900/80">
                 <!-- Preview content will be inserted here -->
             </div>
         </div>
@@ -176,35 +174,26 @@
         height: 100% !important;
         width: 100% !important;
         font-family: 'JetBrains Mono', 'Fira Code', monospace;
-        font-size: 14px;
-        background: #FFFFFF !important; /* Light mode */
-    }
-    .dark .CodeMirror {
-        background: #000000 !important; /* Dark mode */
+        font-size: 15px;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
     
-    /* Custom scrollbar for webkit browsers */
+    /* Custom scrollbar */
     ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
     }
-    
     ::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.05);
-        border-radius: 8px;
+        background: transparent;
     }
-    
     ::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.2);
-        border-radius: 8px;
+        background: rgba(99, 102, 241, 0.4);
+        border-radius: 4px;
     }
-    
-    .dark ::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .dark ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(99, 102, 241, 0.6);
     }
     
     /* Form element focus animations */
@@ -212,7 +201,19 @@
         outline: none;
         transform: translateY(-1px);
     }
+
+    /* Modal animation */
+    #preview-modal.flex .bg-white, #preview-modal.flex .dark\:bg-gray-900 {
+        scale: 1;
+        opacity: 1;
+    }
 </style>
+{% endblock %}
+
+{% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 {% endblock %}
 
 {% block scripts %}
@@ -252,7 +253,7 @@
         const editor = CodeMirror(document.getElementById('code-editor'), {
             lineNumbers: true,
             theme: defaultTheme,
-            mode: 'text/plain', // Start with plain text until language is selected
+            mode: 'text/plain',
             matchBrackets: true,
             autoCloseBrackets: true,
             indentUnit: 4,
@@ -289,14 +290,12 @@
             const selectedLanguage = this.value;
             const mode = languageModes[selectedLanguage] || 'text/plain';
             editor.setOption('mode', mode);
-            console.log('Language changed to:', selectedLanguage, 'Mode set to:', mode); // Debug
         });
 
         // Set initial mode if a language is pre-selected
         if (languageSelect.value) {
             const initialMode = languageModes[languageSelect.value] || 'text/plain';
             editor.setOption('mode', initialMode);
-            console.log('Initial mode set to:', initialMode); // Debug
         }
         
         // Description character count
@@ -322,11 +321,11 @@
             const code = editor.getValue() || '// Your code here';
             
             const content = `
-                <div class="mb-4">
-                    <h2 class="text-xl font-bold mb-2">${title}</h2>
-                    ${description ? `<p class="text-gray-700 dark:text-gray-300">${description}</p>` : ''}
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">${title}</h2>
+                    ${description ? `<p class="text-gray-700 dark:text-gray-300 mt-2">${description}</p>` : ''}
                 </div>
-                <pre class="language-${language} rounded-lg"><code>${code}</code></pre>
+                <pre class="language-${language} rounded-lg bg-white dark:bg-gray-900 border border-gray-200/20 dark:border-indigo-900/30 p-4"><code>${code}</code></pre>
             `;
             
             document.getElementById('preview-content').innerHTML = content;

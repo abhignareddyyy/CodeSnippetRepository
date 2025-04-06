@@ -10,6 +10,9 @@ from wtforms.validators import DataRequired, Length, Email
 import re
 from datetime import datetime, timedelta  # Added datetime import
 
+#Database configuration
+DATABASE = 'database.db'
+
 app = Flask(__name__)
 app.secret_key = 'mykey1234'  # Change this to a secure secret key in production
 
@@ -234,17 +237,30 @@ def profile():
                          snippet_views_map=snippet_views_map
                         )
 
+# ----- Replace the ENTIRE setup_profile function in app.py with this: -----
+
 @app.route('/setup_profile', methods=['GET', 'POST'])
 def setup_profile():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
     
-    user = c.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    user = c.execute('''
+        SELECT id, username, email, password, created_at, profile_picture, 
+               bio, age, dob, profession, profile_setup 
+        FROM users 
+        WHERE id = ?
+    ''', (session['user_id'],)).fetchone()
     
-    if user[12] == 1:  # Profile already set up
+    if not user:
+        conn.close()
+        flash('User not found.', 'error')
+        return redirect(url_for('login'))
+    
+    if user['profile_setup'] == 1:
         conn.close()
         flash('Profile already set up. Edit via Settings.', 'info')
         return redirect(url_for('profile'))
@@ -254,6 +270,13 @@ def setup_profile():
         age = request.form.get('age')
         dob = request.form.get('dob')
         profession = request.form.get('profession')
+        full_name = request.form.get('full_name')
+        status = request.form.get('status')
+        experience = request.form.get('experience')
+        education = request.form.get('education')
+        skills = ','.join(request.form.getlist('skills[]')) if request.form.getlist('skills[]') else ''
+        country = request.form.get('country')
+        website = request.form.get('website')
         
         if 'profile_picture' in request.files:
             file = request.files['profile_picture']
@@ -272,9 +295,13 @@ def setup_profile():
         else:
             c.execute('''
                 UPDATE users 
-                SET bio = ?, age = ?, dob = ?, profession = ?, profile_setup = 1
+                SET bio = ?, age = ?, dob = ?, profession = ?, full_name = ?, 
+                    status = ?, experience = ?, education = ?, skills = ?, 
+                    country = ?, website = ?, profile_setup = 1
                 WHERE id = ?
-            ''', (bio, int(age) if age else None, dob, profession, session['user_id']))
+            ''', (bio, int(age) if age else None, dob, profession, full_name, 
+                  status, int(experience) if experience else None, education, 
+                  skills, country, website, session['user_id']))
             conn.commit()
             conn.close()
             flash('Profile set up successfully!', 'success')
@@ -282,6 +309,8 @@ def setup_profile():
     
     conn.close()
     return render_template('setup_profile.html', user=user)
+
+# ----- End of replaced setup_profile function -----
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
@@ -409,54 +438,141 @@ def get_following():
 
 @app.route('/explore')
 def explore():
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    trending_topics = c.execute('''
-        SELECT language, COUNT(*) as count
-        FROM snippets
-        WHERE is_private = 0 AND created_at >= datetime('now', '-30 days')
-        GROUP BY language
-        ORDER BY count DESC
-        LIMIT 5
-    ''').fetchall()
-    
-    topic_filter = request.args.get('topic', '')
     sort = request.args.get('sort', 'newest')
-    
-    base_query = '''
-        SELECT snippets.id, snippets.title, snippets.language, snippets.description, 
-               snippets.created_at, users.username,
-               (SELECT COUNT(*) FROM votes WHERE snippet_id = snippets.id AND vote_type = 'up') as upvotes,
-               (SELECT COUNT(*) FROM votes WHERE snippet_id = snippets.id AND vote_type = 'down') as downvotes,
-               snippets.user_id
-        FROM snippets 
-        JOIN users ON snippets.user_id = users.id 
-        WHERE snippets.is_private = 0
-    '''
-    params = []
-    
-    if topic_filter:
-        base_query += ' AND snippets.language = ?'
-        params.append(topic_filter)
-    
-    if sort == 'most-upvoted':
-        base_query += ' ORDER BY upvotes DESC, created_at DESC'
-    elif sort == 'trending':
-        base_query += '''
-            ORDER BY (
-                SELECT COUNT(*) FROM votes v 
-                WHERE v.snippet_id = snippets.id AND v.vote_type = 'up' 
-                AND v.created_at >= datetime('now', '-7 days')
-            ) DESC, created_at DESC
-        '''
-    else:
-        base_query += ' ORDER BY snippets.created_at DESC'
-    
-    snippets = c.execute(base_query, params).fetchall()
-    conn.close()
-    
-    return render_template('explore.html', snippets=snippets, trending_topics=trending_topics, sort=sort)
+    topic_filter = request.args.get('topic') # Get topic from query parameters
+
+    conn = None # Initialize connection variable
+    snippets = [] # Initialize snippets list
+    try:
+        conn = sqlite3.connect(DATABASE)
+        # Use Row factory to access columns by name, makes code more readable
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Base query: Select necessary snippet data, join with users, calculate votes
+        query = """
+            SELECT
+                s.id, s.title, s.language, s.description, s.created_at,
+                u.username, -- Get username from joined users table
+                (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up') as upvotes,
+                (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down') as downvotes,
+                s.user_id
+            FROM snippets s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.is_private = 0 -- Only show public snippets in explore
+        """
+        params = [] # List to hold query parameters safely
+
+        # Add filtering if a topic is specified
+        if topic_filter:
+            query += " AND s.language = ? "
+            params.append(topic_filter)
+
+        # Add sorting based on the 'sort' parameter
+        if sort == 'newest':
+            query += " ORDER BY s.created_at DESC"
+        elif sort == 'most-upvoted':
+             # Order by net votes (up - down), then creation date as tie-breaker
+             query += """
+                ORDER BY (
+                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up')
+                    -
+                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down')
+                ) DESC, s.created_at DESC
+            """
+        elif sort == 'trending':
+             # Define 'trending' logic. A simple example: recent highly-upvoted.
+             # This might require a more complex calculation depending on your definition.
+             # For now, let's make it the same as 'most-upvoted' for simplicity.
+             query += """
+                 ORDER BY (
+                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up')
+                    -
+                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down')
+                 ) DESC, s.created_at DESC
+             """
+        else: # Default sort is 'newest'
+            query += " ORDER BY s.created_at DESC"
+
+        # --- Execute the constructed query ---
+        cursor.execute(query, params)
+        raw_snippets = cursor.fetchall()
+
+        # --- CONVERSION STEP (Date string to datetime object) ---
+        # This assumes your template expects the structure below.
+        # Template needs: 0:id, 1:title, 2:language, 3:description,
+        #                 4:created_at (datetime), 5:username, 6:upvotes,
+        #                 7:downvotes, 8:user_id
+        for row in raw_snippets:
+            # Convert the fetched row into a list to modify the date
+            snippet_data = list(row)
+            created_at_val = snippet_data[4] # created_at is at index 4
+
+            # Convert string date from DB to datetime object if necessary
+            if isinstance(created_at_val, str):
+                try:
+                    # Adjust format '%Y-%m-%d %H:%M:%S' if your database stores it differently
+                    snippet_data[4] = datetime.strptime(created_at_val, '%Y-%m-%d %H:%M:%S')
+                except (ValueError, TypeError):
+                    print(f"Warning: Could not parse date string: {created_at_val} for snippet ID {row['id']}")
+                    snippet_data[4] = None # Set to None if parsing fails
+            elif not isinstance(created_at_val, datetime):
+                 snippet_data[4] = None # Ensure it's either datetime or None
+
+            snippets.append(tuple(snippet_data)) # Add the processed tuple to the list
+
+    except sqlite3.Error as e:
+        print(f"Database error in explore route: {e}")
+        flash('An error occurred while retrieving snippets.', 'error')
+        snippets = [] # Ensure snippets is an empty list on error
+    finally:
+        if conn:
+            conn.close() # Make sure the connection is closed
+
+    # Fetch trending topics (uses its own connection handling now)
+    trending_topics = get_trending_topics()
+
+    # Pass the processed data to the template
+    return render_template('explore.html',
+                           snippets=snippets, # List of tuples with datetime objects
+                           trending_topics=trending_topics,
+                           sort=sort)
+                           # Add pagination object later if needed
+                           # pagination=pagination_object)
+# === END REVISED explore FUNCTION ===
+
+
+# === REVISED get_trending_topics FUNCTION ===
+def get_trending_topics():
+    """Fetches top 10 most frequent languages from recent public snippets."""
+    conn = None
+    try:
+        conn = sqlite3.connect(DATABASE)
+        conn.row_factory = sqlite3.Row # Access results by column name
+        cursor = conn.cursor()
+
+        # Query for language counts in the last 7 days (adjust as needed)
+        cursor.execute("""
+            SELECT language, COUNT(*) as count
+            FROM snippets
+            WHERE is_private = 0 -- Only public snippets
+              AND language IS NOT NULL AND language != '' -- Ensure language exists
+              AND created_at > datetime('now', '-7 days') -- Snippets from the last week
+            GROUP BY language
+            ORDER BY count DESC, language ASC -- Order by count, then alphabetically
+            LIMIT 10 -- Get top 10
+        """)
+        topics = cursor.fetchall()
+
+        # Convert Row objects to simple (language, count) tuples
+        return [(row['language'], row['count']) for row in topics]
+
+    except sqlite3.Error as e:
+        print(f"Database error in get_trending_topics: {e}")
+        return [] # Return an empty list if there's an error
+    finally:
+        if conn:
+            conn.close() # Always close the connection
 
 @app.route('/explore/snippet/<int:id>')
 def view_snippet_explore(id):
@@ -771,6 +887,7 @@ def view_snippet(id):
         return redirect(url_for('explore'))
         
     return render_template('view_snippet.html', snippet=snippet)
+
 
 @app.route('/snippet/edit/<int:id>', methods=['GET', 'POST'])
 def edit_snippet(id):

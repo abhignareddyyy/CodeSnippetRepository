@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-lg w-full space-y-8 bg-dark-surface p-10 rounded-2xl shadow-2xl border border-gray-800 transform transition-all duration-300 hover:shadow-accent/5">
+<div class="min-h-screen flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-noir via-indigo-950 to-graphite dark:bg-none">
+    <div class="max-w-md w-full space-y-10 bg-dark-surface/90 p-12 rounded-3xl shadow-2xl border border-gray-800/50 backdrop-blur-md transform transition-all duration-300 hover:shadow-earth-glow animate-fadeIn">
         <div>
-            <h2 class="mt-6 text-center text-4xl font-extrabold text-gray-100">
+            <h2 class="mt-6 text-center text-4xl font-bold text-gray-100 bg-clip-text bg-gradient-to-r from-indigo-400 to-earth-light tracking-tight">
                 Register
             </h2>
-            <p class="mt-2 text-center text-base text-gray-400">
+            <p class="mt-3 text-center text-base text-gray-400">
                 Join our community of developers
             </p>
         </div>
@@ -15,7 +15,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-900/50 text-red-200{% else %}bg-green-900/50 text-green-200{% endif %}">
+                    <div class="mb-6 p-4 rounded-xl {% if category == 'error' %}bg-red-900/30 text-red-200 border border-red-800/50{% else %}bg-green-900/30 text-green-200 border border-green-800/50{% endif %} shadow-md transition-all duration-300 hover:shadow-lg">
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -23,10 +23,10 @@
         {% endwith %}
         
         <form method="POST" action="{{ url_for('register') }}" class="space-y-8">
-            <div class="rounded-md shadow-sm space-y-6">
+            <div class="rounded-md shadow-sm space-y-8">
                 <!-- Username Field -->
-                <div class="relative">
-                    <label for="username" class="block text-lg font-medium text-gray-400">
+                <div class="relative group">
+                    <label for="username" class="block text-lg font-semibold text-gray-400 transition-all duration-300 group-focus-within:text-earth">
                         Username
                     </label>
                     <input id="username" 
@@ -35,13 +35,13 @@
                            required 
                            minlength="3"
                            placeholder="Enter your username"
-                           class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-lg transition-all duration-200"
+                           class="appearance-none rounded-xl relative block w-full px-5 py-4 bg-dark-surface-2/80 border border-gray-800/50 text-gray-100 focus:outline-none focus:ring-2 focus:ring-earth/50 focus:border-earth text-lg transition-all duration-300 hover:shadow-md placeholder:text-gray-500"
                            autocomplete="username">
                 </div>
 
                 <!-- Email Field -->
-                <div class="relative">
-                    <label for="email" class="block text-lg font-medium text-gray-400">
+                <div class="relative group">
+                    <label for="email" class="block text-lg font-semibold text-gray-400 transition-all duration-300 group-focus-within:text-earth">
                         Email
                     </label>
                     <input id="email" 
@@ -49,13 +49,13 @@
                            type="email" 
                            required 
                            placeholder="Enter your email"
-                           class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-lg transition-all duration-200"
+                           class="appearance-none rounded-xl relative block w-full px-5 py-4 bg-dark-surface-2/80 border border-gray-800/50 text-gray-100 focus:outline-none focus:ring-2 focus:ring-earth/50 focus:border-earth text-lg transition-all duration-300 hover:shadow-md placeholder:text-gray-500"
                            autocomplete="email">
                 </div>
 
                 <!-- Password Field -->
-                <div class="relative">
-                    <label for="password" class="block text-lg font-medium text-gray-400">
+                <div class="relative group">
+                    <label for="password" class="block text-lg font-semibold text-gray-400 transition-all duration-300 group-focus-within:text-earth">
                         Password
                     </label>
                     <input id="password" 
@@ -64,7 +64,7 @@
                            required 
                            minlength="6"
                            placeholder="Enter your password"
-                           class="appearance-none rounded-xl relative block w-full px-4 py-3 bg-dark-surface-2 border border-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-lg transition-all duration-200"
+                           class="appearance-none rounded-xl relative block w-full px-5 py-4 bg-dark-surface-2/80 border border-gray-800/50 text-gray-100 focus:outline-none focus:ring-2 focus:ring-earth/50 focus:border-earth text-lg transition-all duration-300 hover:shadow-md placeholder:text-gray-500"
                            autocomplete="new-password">
                 </div>
             </div>
@@ -72,7 +72,7 @@
             <!-- Submit Button -->
             <div>
                 <button type="submit" 
-                        class="group relative w-full flex justify-center py-4 px-6 border border-transparent text-lg font-medium rounded-xl text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-dark focus:ring-offset-dark-surface transition-all duration-200 ease-in-out">
+                        class="group relative w-full flex justify-center py-4 px-6 border border-transparent text-lg font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-earth hover:from-indigo-700 hover:to-earth-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-earth focus:ring-offset-dark-surface transition-all duration-300 ease-in-out shadow-lg hover:shadow-earth-glow transform hover:scale-105">
                     Register
                 </button>
             </div>
@@ -82,7 +82,7 @@
         <div class="text-center">
             <p class="text-base text-gray-400">
                 Already have an account? 
-                <a href="{{ url_for('login') }}" class="font-medium text-accent hover:text-accent-dark transition-colors duration-200">
+                <a href="{{ url_for('login') }}" class="font-semibold text-earth hover:text-earth-light transition-colors duration-300">
                     Login here
                 </a>
             </p>
