@@ -7,136 +7,161 @@ DATABASE_FILE = 'database.db'
 def init_db():
     """
     Initializes the database by creating necessary tables and triggers
-    if they don't exist. Correctly defines 'updated_at' with a default
-    for new table creation.
+    if they don't exist. Includes 'favorites' (for own snippets)
+    and 'bookmarks' (for any public snippet) tables.
     """
     print(f"Initializing database schema at: {os.path.abspath(DATABASE_FILE)}")
-    conn = sqlite3.connect(DATABASE_FILE)
-    c = conn.cursor()
+    conn = None # Initialize conn
+    try:
+        conn = sqlite3.connect(DATABASE_FILE)
+        c = conn.cursor()
 
-    # --- Users Table ---
-    # Includes fields from setup_profile form
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,               -- Store HASHED password
-            profile_picture TEXT,
-            bio TEXT,
-            age INTEGER,
-            dob TEXT,
-            profession TEXT,
-            profile_setup INTEGER DEFAULT 0,    -- 0 = Not setup, 1 = Setup complete
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            full_name TEXT,
-            status TEXT,
-            experience REAL,
-            education TEXT,
-            skills TEXT,
-            country TEXT,
-            website TEXT
-        );
-    ''')
-    print("- Users table schema ensured.")
+        # --- Users Table ---
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                profile_picture TEXT,
+                bio TEXT,
+                age INTEGER,
+                dob TEXT,
+                profession TEXT,
+                profile_setup INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                full_name TEXT,
+                status TEXT,
+                experience REAL,
+                education TEXT,
+                skills TEXT,
+                country TEXT,
+                website TEXT
+            );
+        ''')
+        print("- Users table schema ensured.")
 
-    # --- Snippets Table ---
-    # Defines updated_at column with default for initial creation
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS snippets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            code TEXT NOT NULL,
-            language TEXT NOT NULL,
-            description TEXT,
-            is_private INTEGER DEFAULT 0,      -- 0 = public, 1 = private
-            views INTEGER DEFAULT 0,
-            rating_total INTEGER DEFAULT 0,   -- Sum of all ratings
-            rating_count INTEGER DEFAULT 0,   -- Number of ratings received
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Column with default
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-    ''')
-    print("- Snippets table schema ensured.")
+        # --- Snippets Table ---
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS snippets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                code TEXT NOT NULL,
+                language TEXT NOT NULL,
+                description TEXT,
+                is_private INTEGER DEFAULT 0,
+                views INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+        ''')
+        print("- Snippets table schema ensured.")
 
-    # --- Trigger to update 'updated_at' on snippet update ---
-    # Ensures the trigger is created correctly
-    c.execute('''
-        CREATE TRIGGER IF NOT EXISTS update_snippet_updated_at
-        AFTER UPDATE ON snippets
-        FOR EACH ROW
-        -- Only run if updated_at wasn't explicitly set in the UPDATE statement
-        WHEN OLD.updated_at = NEW.updated_at OR OLD.updated_at IS NULL
-        BEGIN
-            -- Set updated_at to the current time for the updated row
-            UPDATE snippets
-            SET updated_at = CURRENT_TIMESTAMP
-            WHERE id = OLD.id;
-        END;
-    ''')
-    print("- Trigger 'update_snippet_updated_at' ensured.")
+        # --- Trigger: Update snippet 'updated_at' ---
+        c.execute('''
+            CREATE TRIGGER IF NOT EXISTS update_snippet_updated_at
+            AFTER UPDATE ON snippets
+            FOR EACH ROW
+            WHEN OLD.updated_at = NEW.updated_at OR NEW.updated_at IS NULL -- Check NEW too
+            BEGIN
+                UPDATE snippets SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+            END;
+        ''')
+        print("- Trigger 'update_snippet_updated_at' ensured.")
 
-    # --- Votes Table ---
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS votes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            snippet_id INTEGER NOT NULL,
-            vote_type TEXT NOT NULL CHECK(vote_type IN ('up', 'down')),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE,
-            UNIQUE(user_id, snippet_id)
-        );
-    ''')
-    print("- Votes table schema ensured.")
+        # --- Votes Table ---
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS votes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                snippet_id INTEGER NOT NULL,
+                vote_type INTEGER NOT NULL CHECK(vote_type IN (1, -1)), -- 1=up, -1=down
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE,
+                UNIQUE(user_id, snippet_id)
+            );
+        ''')
+        print("- Votes table schema ensured.")
 
-    # --- Followers Table ---
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS followers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            follower_id INTEGER NOT NULL,
-            followed_id INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (followed_id) REFERENCES users(id) ON DELETE CASCADE,
-            UNIQUE(follower_id, followed_id)
-        );
-    ''')
-    print("- Followers table schema ensured.")
+        # --- Followers Table ---
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS followers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                follower_id INTEGER NOT NULL,
+                followed_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (followed_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(follower_id, followed_id)
+            );
+        ''')
+        print("- Followers table schema ensured.")
 
-    # --- Comments Table ---
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS comments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            snippet_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            parent_id INTEGER,                 -- For nested replies
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
-        );
-    ''')
-    print("- Comments table schema ensured.")
+        # --- Comments Table ---
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                snippet_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                parent_id INTEGER,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+            );
+        ''')
+        print("- Comments table schema ensured.")
 
-    # --- Ratings Table (Optional - Commented out) ---
-    # c.execute(''' CREATE TABLE IF NOT EXISTS ratings ( ... ); ''')
-    # print("- Ratings table ensured.")
+        # --- Favorites Table (For User's Own Snippets) ---
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS favorites (
+                user_id INTEGER NOT NULL,
+                snippet_id INTEGER NOT NULL,
+                favorited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE,
+                PRIMARY KEY (user_id, snippet_id)
+            );
+        ''')
+        print("- Favorites table schema ensured.")
 
+        # --- *** Bookmarks Table (For Any Public Snippet) *** ---
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS bookmarks (
+                user_id INTEGER NOT NULL,
+                snippet_id INTEGER NOT NULL,
+                bookmarked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (snippet_id) REFERENCES snippets(id) ON DELETE CASCADE,
+                PRIMARY KEY (user_id, snippet_id)
+            );
+        ''')
+        print("- Bookmarks table schema ensured.")
+        # --- *** END NEW TABLE *** ---
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+
+    except sqlite3.Error as e:
+         print(f"ERROR during DB initialization: {e}")
+         # Depending on severity, maybe raise the error
+         # raise
+    finally:
+        if conn:
+            conn.close()
+            print("Database connection closed after init.")
+
     print("Database initialization check complete.")
+
 
 def migrate_db():
     """
-    Applies schema migrations, specifically handling the addition of
-    'updated_at' column to avoid issues with non-constant defaults in
-    older SQLite versions.
+    Applies schema migrations if needed, adding missing columns like
+    'updated_at' to snippets and 'join_date' to users.
     """
     print("Checking for necessary database migrations...")
     conn = None
@@ -145,80 +170,78 @@ def migrate_db():
         conn = sqlite3.connect(DATABASE_FILE)
         c = conn.cursor()
 
-        # --- Migration for 'updated_at' column in 'snippets' table ---
+        # === Migration for 'updated_at' in 'snippets' ===
         c.execute("PRAGMA table_info(snippets);")
-        columns = [info[1] for info in c.fetchall()] # Get existing column names
-
-        if 'updated_at' not in columns:
-            print("  - Attempting to add 'updated_at' column to snippets...")
+        snippets_columns = [info[1] for info in c.fetchall()]
+        if 'updated_at' not in snippets_columns:
+            print("  - Migrating: Adding 'updated_at' to snippets...")
             try:
-                # Step 1: Add the column WITHOUT the non-constant default
                 c.execute("ALTER TABLE snippets ADD COLUMN updated_at TIMESTAMP;")
-                print("    -> Added 'updated_at' column definition.")
-
-                # Step 2: Update existing rows to have a sensible default value
-                # Using created_at is a common approach for initial backfill.
-                c.execute("""
-                    UPDATE snippets
-                    SET updated_at = created_at
-                    WHERE updated_at IS NULL;
-                """)
-                print("    -> Populated existing NULL 'updated_at' values using 'created_at'.")
-
-                conn.commit() # Commit these changes
+                c.execute("UPDATE snippets SET updated_at = created_at WHERE updated_at IS NULL;")
+                conn.commit() # Commit this specific migration
                 schema_changed = True
-                print("  - Successfully added and populated 'updated_at' column.")
-
+                print("  - Migration complete: 'updated_at' added.")
             except sqlite3.OperationalError as e:
-                # If adding column fails for other reasons
-                print(f"    -> ERROR adding/populating 'updated_at' column: {e}")
-                conn.rollback()
-        else:
-             # No need to print this every time if the column exists
-             # print("  - 'updated_at' column already exists in snippets table.")
-             pass
+                print(f"    -> ERROR migrating 'updated_at': {e}")
+                conn.rollback() # Rollback this specific migration attempt
 
-        # --- Add other migration checks here if needed ---
-        # Example: Check for 'full_name' column in users
-        # c.execute("PRAGMA table_info(users);")
-        # user_columns = [info[1] for info in c.fetchall()]
-        # if 'full_name' not in user_columns:
+
+        # === Migration for 'join_date' in 'users' ===
+        c.execute("PRAGMA table_info(users);")
+        user_columns = [info[1] for info in c.fetchall()]
+        if 'join_date' not in user_columns:
+            print("  - Migrating: Adding 'join_date' to users...")
+            try:
+                c.execute("ALTER TABLE users ADD COLUMN join_date TIMESTAMP;")
+                c.execute("UPDATE users SET join_date = created_at WHERE join_date IS NULL;")
+                conn.commit() # Commit this specific migration
+                schema_changed = True
+                print("  - Migration complete: 'join_date' added.")
+            except sqlite3.OperationalError as e:
+                print(f"    -> ERROR migrating 'join_date': {e}")
+                conn.rollback() # Rollback this specific migration attempt
+
+        # --- Add other future migration checks here ---
+        # Example: Adding a hypothetical 'tags' column to snippets
+        # c.execute("PRAGMA table_info(snippets);")
+        # snippets_columns = [info[1] for info in c.fetchall()] # Re-fetch if needed
+        # if 'tags' not in snippets_columns:
+        #     print("  - Migrating: Adding 'tags' to snippets...")
         #     try:
-        #         c.execute("ALTER TABLE users ADD COLUMN full_name TEXT;")
-        #         print("  - Added 'full_name' column to users table.")
-        #         conn.commit()
-        #         schema_changed = True
+        #          c.execute("ALTER TABLE snippets ADD COLUMN tags TEXT;")
+        #          # No default update needed unless required
+        #          conn.commit()
+        #          schema_changed = True
+        #          print("  - Migration complete: 'tags' added.")
         #     except sqlite3.OperationalError as e:
-        #         print(f"    -> ERROR adding 'full_name' column: {e}")
-        #         conn.rollback()
-        # ... repeat for other new user columns if necessary ...
-
+        #          print(f"    -> ERROR migrating 'tags': {e}")
+        #          conn.rollback()
 
     except sqlite3.Error as e:
-        # Catch potential connection or PRAGMA errors
         print(f"Migration check failed with database error: {e}")
-        if conn:
-            conn.rollback()
+        # Rollback might not be needed here if commits are per-migration
+        # if conn: conn.rollback()
     finally:
         if conn:
-            conn.close()
+             conn.close()
+             print("Database connection closed after migration check.")
+
 
     if schema_changed:
-        print("Database schema migrations applied successfully.")
+        print("One or more database schema migrations were applied.")
     else:
-         print("No schema migrations were needed.")
-    # print("Database migration check complete.") # Can omit this less informative line
+         print("No necessary schema migrations were detected.")
+
 
 # --- Direct Execution Block ---
-# This allows running `python database.py` to set up/check the database
 if __name__ == '__main__':
     print("-" * 40)
-    print("Running database script directly...")
+    print(f"Running database script for: {DATABASE_FILE}")
     print("-" * 40)
-    # init_db ensures tables and triggers are created IF THEY DON'T EXIST
+    # Ensure tables exist (idempotent)
     init_db()
-    # migrate_db ensures columns are added IF THEY DON'T EXIST
+    # Apply pending migrations (idempotent)
     migrate_db()
     print("-" * 40)
-    print(f"Script finished. Database '{DATABASE_FILE}' schema checked/updated.")
+    print("Database schema checks complete.")
     print("-" * 40)

@@ -1,22 +1,74 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
-from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
 import sqlite3
 import os
-from database import init_db, migrate_db
+import re
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory, g
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, Email
-import re
-from datetime import datetime, timedelta  # Added datetime import
 
-#Database configuration
+# Assuming database.py contains these functions
+from database import init_db, migrate_db
+
+# Database configuration
 DATABASE = 'database.db'
 
 app = Flask(__name__)
-app.secret_key = 'mykey1234'  # Change this to a secure secret key in production
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'mykey1234') # Use environment variable or default
 
-# Configure upload folder
+# --- Database Helper Functions ---
+
+def parse_db_date(date_str):
+    """
+    Safely parses a date string typically stored in SQLite (YYYY-MM-DD HH:MM:SS)
+    into a Python datetime object. Returns None if parsing fails or input is None/empty.
+    """
+    if not date_str:
+        return None
+    try:
+        # --- VERY IMPORTANT ---
+        # Adjust the format string '%Y-%m-%d %H:%M:%S' if your database
+        # stores dates/times in a different format!
+        # ----------------------
+        return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError) as e:
+        try:
+            app.logger.warning(f"Could not parse date string '{date_str}': {e}")
+        except RuntimeError: # Handle cases outside app context if necessary
+            print(f"Warning: Could not parse date string '{date_str}': {e}")
+        return None # Return None if parsing fails
+
+def get_db():
+    """Opens a new database connection if there is none yet for the current context."""
+    db = getattr(g, '_database', None)
+    if db is None:
+        db_path = os.path.join(app.root_path, DATABASE) # Construct path safely
+        try:
+             db = g._database = sqlite3.connect(db_path)
+             db.row_factory = sqlite3.Row # Use Row factory
+             # db.execute("PRAGMA foreign_keys = ON;") # Optional: Enable FK support
+        except sqlite3.Error as e:
+            app.logger.error(f"Database connection error: {e}") # Use app logger
+            raise # Reraise the error
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    """Closes the database again at the end of the request."""
+    db = getattr(g, '_database', None)
+    if db is not None:
+        try:
+            db.close()
+        except sqlite3.Error as e:
+             app.logger.error(f"Error closing database connection: {e}") # Use app logger
+
+def get_current_user_id():
+    """Helper to safely get user ID from session."""
+    return session.get('user_id')
+
+# --- File Upload Helper ---
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -26,51 +78,92 @@ app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB limit
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# Initialize and migrate database
-init_db()
-migrate_db()
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Define Login Form
+# Initialize and migrate database (call these once at startup)
+# It's often better to do this via a separate script or CLI command
+# but keeping it here based on the original structure.
+with app.app_context():
+    init_db()
+    migrate_db()
+
+# --- Forms ---
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3)])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=8)])
     submit = SubmitField('Sign in')
 
-# --- NEW API ROUTE FOR CONTRIBUTIONS ---
+# --- API Routes ---
 @app.route('/api/user/<username>/contributions')
 def get_user_contributions(username):
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-
-    user = c.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
+    conn = get_db() # Use helper
+    user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
 
     if not user:
-        conn.close()
         return jsonify({"success": False, "error": "User not found"}), 404
 
-    user_id = user[0]
+    user_id = user['id'] # Access by key
 
-    # Get contributions for the last year
     one_year_ago = datetime.now() - timedelta(days=365)
     one_year_ago_str = one_year_ago.strftime('%Y-%m-%d %H:%M:%S')
 
-    contributions = c.execute('''
-        SELECT strftime('%Y-%m-%d', created_at) as date, COUNT(id) as count
-        FROM snippets
-        WHERE user_id = ? AND is_private = 0 AND created_at >= ?
-        GROUP BY date
-        ORDER BY date ASC
-    ''', (user_id, one_year_ago_str)).fetchall()
+    try:
+        contributions = conn.execute('''
+            SELECT strftime('%Y-%m-%d', created_at) as date, COUNT(id) as count
+            FROM snippets
+            WHERE user_id = ? AND is_private = 0 AND created_at >= ?
+            GROUP BY date
+            ORDER BY date ASC
+        ''', (user_id, one_year_ago_str)).fetchall()
 
-    conn.close()
+        contribution_data = {row['date']: row['count'] for row in contributions} # Access by key
+        return jsonify({"success": True, "contributions": contribution_data})
 
-    contribution_data = {row[0]: row[1] for row in contributions}
+    except sqlite3.Error as e:
+        app.logger.error(f"DB Error getting contributions for {username}: {e}")
+        return jsonify({"success": False, "error": "Database error"}), 500
 
-    return jsonify({"success": True, "contributions": contribution_data})
-# --- END NEW API ROUTE ---
+@app.route('/api/comments', methods=['POST'])
+def create_comment():
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Please login to comment'}), 401
+
+    data = request.json
+    content = data.get('content')
+    snippet_id = data.get('snippet_id')
+    parent_id = data.get('parent_id') # Can be None
+
+    if not content or not snippet_id:
+        return jsonify({'success': False, 'error': 'Content and snippet ID are required'}), 400
+
+    conn = get_db()
+    try:
+        # Check snippet exists
+        snippet = conn.execute('SELECT id FROM snippets WHERE id = ?', (snippet_id,)).fetchone()
+        if not snippet:
+            return jsonify({'success': False, 'error': 'Snippet not found'}), 404
+
+        # Check parent comment exists if provided
+        if parent_id:
+            parent = conn.execute('SELECT id FROM comments WHERE id = ?', (parent_id,)).fetchone()
+            if not parent:
+                return jsonify({'success': False, 'error': 'Parent comment not found'}), 404
+
+        conn.execute('''
+            INSERT INTO comments (snippet_id, user_id, parent_id, content)
+            VALUES (?, ?, ?, ?)
+        ''', (snippet_id, user_id, parent_id, content))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Comment posted successfully'})
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"Database error creating comment on snippet {snippet_id} by user {user_id}: {e}")
+        return jsonify({'success': False, 'error': 'Database error occurred'}), 500
+
+# --- Web Routes ---
 
 @app.route('/')
 def home():
@@ -82,868 +175,1450 @@ def home():
 def register():
     if request.method == 'POST':
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        
-        try:
-            username = request.form.get('username')
-            email = request.form.get('email')
-            password = request.form.get('password')
-            
-            if not username or len(username) < 3:
-                if is_ajax:
-                    return jsonify({"success": False, "message": "Username must be at least 3 characters long"})
-                flash('Username must be at least 3 characters long', 'error')
-                return render_template('register.html')
-            
-            if not email or '@' not in email:
-                if is_ajax:
-                    return jsonify({"success": False, "message": "Please enter a valid email address"})
-                flash('Please enter a valid email address', 'error')
-                return render_template('register.html')
-                
-            if not password or len(password) < 8:
-                if is_ajax:
-                    return jsonify({"success": False, "message": "Password must be at least 8 characters long"})
-                flash('Password must be at least 8 characters long', 'error')
-                return render_template('register.html')
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
-            conn = sqlite3.connect('database.db')
-            c = conn.cursor()
-            
-            existing_user = c.execute(
-                'SELECT id FROM users WHERE username = ? OR email = ?', 
+        # Basic server-side validation (consider WTForms for robustness)
+        if not username or len(username) < 3:
+            msg = "Username must be at least 3 characters long"
+            if is_ajax: return jsonify({"success": False, "message": msg}), 400
+            flash(msg, 'error'); return render_template('register.html')
+        if not email or '@' not in email:
+            msg = "Please enter a valid email address"
+            if is_ajax: return jsonify({"success": False, "message": msg}), 400
+            flash(msg, 'error'); return render_template('register.html')
+        if not password or len(password) < 8:
+            msg = "Password must be at least 8 characters long"
+            if is_ajax: return jsonify({"success": False, "message": msg}), 400
+            flash(msg, 'error'); return render_template('register.html')
+
+        conn = get_db()
+        try:
+            existing_user = conn.execute(
+                'SELECT id FROM users WHERE username = ? OR email = ?',
                 (username, email)
             ).fetchone()
-            
+
             if existing_user:
-                conn.close()
-                if is_ajax:
-                    return jsonify({"success": False, "message": "Username or email already exists!"})
-                flash('Username or email already exists!', 'error')
-                return render_template('register.html')
-                
-            c.execute(
+                msg = "Username or email already exists!"
+                if is_ajax: return jsonify({"success": False, "message": msg}), 409 # Conflict
+                flash(msg, 'error'); return render_template('register.html')
+
+            conn.execute(
                 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
                 (username, email, generate_password_hash(password))
             )
             conn.commit()
-            conn.close()
-            
+
+            msg = "Registration successful!"
+            redirect_url = url_for('login')
             if is_ajax:
-                return jsonify({"success": True, "message": "Registration successful!", "redirect": url_for('login')})
-            flash('Registration successful! Please login.', 'success')
-            return redirect(url_for('login'))
-                
+                return jsonify({"success": True, "message": msg, "redirect": redirect_url})
+            flash(f'{msg} Please login.', 'success')
+            return redirect(redirect_url)
+
         except sqlite3.Error as e:
-            print(f"Database error: {str(e)}")
-            if is_ajax:
-                return jsonify({"success": False, "message": "Database error occurred. Please try again."})
-            flash('Database error occurred. Please try again.', 'error')
-            return render_template('register.html')
+            conn.rollback()
+            app.logger.error(f"Database error during registration for {username}: {e}")
+            msg = "Database error occurred. Please try again."
+            if is_ajax: return jsonify({"success": False, "message": msg}), 500
+            flash(msg, 'error'); return render_template('register.html')
         except Exception as e:
-            print(f"Unexpected error: {str(e)}")
-            if is_ajax:
-                return jsonify({"success": False, "message": "An unexpected error occurred. Please try again."})
-            flash('An unexpected error occurred. Please try again.', 'error')
-            return render_template('register.html')
-    
+            # Catch other potential errors
+            app.logger.error(f"Unexpected error during registration: {e}", exc_info=True)
+            msg = "An unexpected error occurred. Please try again."
+            if is_ajax: return jsonify({"success": False, "message": msg}), 500
+            flash(msg, 'error'); return render_template('register.html')
+
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
-    if request.method == 'POST' and form.validate_on_submit():
+
+    if form.validate_on_submit(): # Handles POST and validation
         username = form.username.data
         password = form.password.data
-        
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        user = c.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-        conn.close()
-        
-        if user and check_password_hash(user[3], password):
-            session['user_id'] = user[0]
-            session['username'] = user[1]
-            
-            if is_ajax:
-                return jsonify({'success': True, 'message': 'Logged in successfully!', 'redirect': url_for('profile')})
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('profile'))
-        else:
-            if is_ajax:
-                return jsonify({'success': False, 'message': 'Invalid username or password!'})
-            flash('Invalid username or password!', 'error')
-    
-    if is_ajax and form.errors:
+        conn = get_db()
+        try:
+            user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+
+            if user and check_password_hash(user['password'], password): # Access by key
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                redirect_url = url_for('profile')
+                if is_ajax:
+                    return jsonify({'success': True, 'message': 'Logged in successfully!', 'redirect': redirect_url})
+                flash('Logged in successfully!', 'success')
+                return redirect(redirect_url)
+            else:
+                msg = 'Invalid username or password!'
+                if is_ajax:
+                    return jsonify({'success': False, 'message': msg}), 401 # Unauthorized
+                flash(msg, 'error')
+        except sqlite3.Error as e:
+             app.logger.error(f"Database error during login for {username}: {e}")
+             msg = 'Database error during login.'
+             if is_ajax: return jsonify({'success': False, 'message': msg}), 500
+             flash(msg, 'error')
+
+    # Handle AJAX validation errors if form.validate_on_submit() was False on POST
+    if is_ajax and request.method == 'POST' and form.errors:
         errors = {field.name: field.errors for field in form if field.errors}
-        return jsonify({'success': False, 'message': 'Validation failed', 'errors': errors})
-    
+        return jsonify({'success': False, 'message': 'Validation failed', 'errors': errors}), 400
+
+    # Render form for GET or failed POST (non-AJAX)
     return render_template('login.html', form=form)
 
-@app.route('/profile')
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
 
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
+# --- Consolidated Profile Route ---
+# --- Consolidated Profile Route ---
+# --- Consolidated Profile Route ---
+# --- Consolidated Profile Route (Modified for Debugging Step 2) ---
+# --- Consolidated Profile Route (Restored render_template, keeping raise e for debug) ---
+@app.route('/profile')          # Route for viewing own profile
+@app.route('/user/<username>')  # Route for viewing someone else's profile
+def profile(username=None):
+    viewer_user_id = get_current_user_id()
+    profile_user_id = None
+    is_own_profile = False
+    user_data_row = None # Use Row object for data access
 
-    user = c.execute('''
-        SELECT u.id, u.username, u.email,
-               (SELECT COUNT(*) FROM followers WHERE followed_id = u.id) as followers_count,
-               (SELECT COUNT(*) FROM followers WHERE follower_id = u.id) as following_count,
-               (SELECT COUNT(*) FROM snippets WHERE user_id = u.id) as snippets_count,
-               u.created_at, u.profile_picture, u.bio, u.age, u.dob, u.profession, u.profile_setup
-        FROM users u
-        WHERE u.id = ?
-    ''', (session['user_id'],)).fetchone()
+    # --- Start Debug Print ---
+    # print(f"\n===== DEBUG: Entering profile function =====")
+    # print(f"DEBUG: Request Path: {request.path}")
+    # print(f"DEBUG: Username parameter: {username}")
+    # print(f"DEBUG: Viewer User ID from session: {viewer_user_id}")
+    # --- End Debug Print ---
 
-    # --- >>> CORRECTED SQL QUERY FOR SNIPPETS <<< ---
-    snippets = c.execute('''
-        SELECT id, title, language, created_at,
-               (SELECT COUNT(*) FROM votes WHERE snippet_id = snippets.id AND vote_type = 'up') as upvotes,
-               -- Corrected the table name in the subquery below from snippets to votes
-               (SELECT COUNT(*) FROM votes WHERE snippet_id = snippets.id AND vote_type = 'down') as downvotes,
-               code, views
-        FROM snippets
-        WHERE user_id = ?
-        ORDER BY created_at DESC
-    ''', (session['user_id'],)).fetchall()
-    # --- >>> END OF CORRECTION <<< ---
+    conn = get_db()
 
-    # Create the map using the correct index for views (now index 7 after adding code)
-    # Query result indexes: 0:id, 1:title, 2:language, 3:created_at, 4:upvotes, 5:downvotes, 6:code, 7:views
-    snippet_views_map = {snippet[0]: snippet[7] for snippet in snippets} # views is at index 7
+    try:
+        # --- Start Debug Print ---
+        # print("DEBUG: Inside TRY block")
+        # --- End Debug Print ---
 
-    conn.close()
+        # --- 1. Identify profile owner & fetch basic data (using Row factory) ---
+        if username:
+            # --- Start Debug Print ---
+            # print(f"DEBUG: Condition 'if username:' is TRUE (username='{username}')")
+            # --- End Debug Print ---
+            user_data_row = conn.execute('''
+                SELECT id, username, email, join_date, bio, profile_picture, profile_setup,
+                       full_name, status, experience, education, skills, country, website, age, dob, profession
+                FROM users WHERE username = ?
+            ''', (username,)).fetchone()
 
-    if user is None:
-        session.clear() # User not found, clear session
-        return redirect(url_for('login'))
+            if not user_data_row:
+                flash(f'User "{username}" not found.', 'error')
+                # --- Start Debug Print ---
+                # print(f"DEBUG: User '{username}' not found, redirecting to explore.")
+                # --- End Debug Print ---
+                return redirect(url_for('explore')) # Redirect if user not found
 
-    # Ensure all needed variables are passed to the template
-    return render_template('profile.html',
-                         user=user,                      # The user tuple
-                         snippets=snippets,              # List of snippet tuples
-                         followers_count=user[3],
-                         following_count=user[4],
-                         snippet_count=user[5],
-                         join_date=user[6],
-                         profile_picture=user[7],        # Correct index for profile_picture
-                         bio=user[8],                    # Correct index for bio
-                         # age=user[9], dob=user[10], profession=user[11], # Only needed if used in template
-                         profile_setup=(user[12] == 1),  # Pass boolean for easier checking in template
-                         snippet_views_map=snippet_views_map
-                        )
+            profile_user_id = user_data_row['id']
+            is_own_profile = (viewer_user_id == profile_user_id)
+            # --- Start Debug Print ---
+            # print(f"DEBUG: Fetched user_data_row for username: '{username}'. ID: {profile_user_id}. Is Own Profile? {is_own_profile}")
+            # --- End Debug Print ---
 
-# ----- Replace the ENTIRE setup_profile function in app.py with this: -----
+        else: # Viewing own profile (username is None)
+            # --- Start Debug Print ---
+            # print(f"DEBUG: Condition 'if username:' is FALSE (username is None)")
+            # --- End Debug Print ---
+            if not viewer_user_id:
+                flash('Please login to view your profile.', 'warning')
+                 # --- Start Debug Print ---
+                # print(f"DEBUG: No viewer_user_id, redirecting to login.")
+                 # --- End Debug Print ---
+                return redirect(url_for('login')) # Redirect if not logged in
 
+            profile_user_id = viewer_user_id
+            is_own_profile = True
+            user_data_row = conn.execute('''
+                 SELECT id, username, email, join_date, bio, profile_picture, profile_setup,
+                        full_name, status, experience, education, skills, country, website, age, dob, profession
+                 FROM users WHERE id = ?
+             ''', (profile_user_id,)).fetchone()
+
+            if not user_data_row:
+                 flash('Error retrieving own profile data. Logged out.', 'error')
+                 session.clear()
+                 # --- Start Debug Print ---
+                 # print(f"DEBUG: Could not retrieve own user data (ID: {profile_user_id}), clearing session and redirecting to login.")
+                 # --- End Debug Print ---
+                 return redirect(url_for('login')) # Redirect if own data fetch fails
+            # --- Start Debug Print ---
+            # print(f"DEBUG: Fetched user_data_row for own profile. ID: {profile_user_id}. Is Own Profile? {is_own_profile}")
+            # --- End Debug Print ---
+
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Proceeding with profile_user_id = {profile_user_id}")
+        # --- End Debug Print ---
+
+        # --- Parse Join Date ---
+        join_date_obj = parse_db_date(user_data_row['join_date'])
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Parsed join_date_obj: {join_date_obj}")
+        # --- End Debug Print ---
+
+        # --- Fetch Common Data ---
+        followers_count = conn.execute('SELECT COUNT(*) FROM followers WHERE followed_id = ?', (profile_user_id,)).fetchone()[0]
+        following_count = conn.execute('SELECT COUNT(*) FROM followers WHERE follower_id = ?', (profile_user_id,)).fetchone()[0]
+        is_following = False
+        if viewer_user_id and not is_own_profile:
+            follow_check = conn.execute('SELECT 1 FROM followers WHERE follower_id = ? AND followed_id = ?', (viewer_user_id, profile_user_id)).fetchone()
+            is_following = bool(follow_check)
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Fetched common stats. Followers: {followers_count}, Following: {following_count}, Is Viewer Following?: {is_following}")
+        # --- End Debug Print ---
+
+        # --- Fetch Snippets ---
+        sql_snippets = 'SELECT id, title, language, created_at, code, is_private, views FROM snippets WHERE user_id = ?'
+        params_snippets = [profile_user_id]
+        if not is_own_profile:
+            sql_snippets += ' AND is_private = 0'
+        sql_snippets += ' ORDER BY created_at DESC'
+        snippets_rows = conn.execute(sql_snippets, params_snippets).fetchall()
+        snippet_count = len(snippets_rows)
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Fetched {snippet_count} snippets.")
+        # --- End Debug Print ---
+
+        # --- Fetch votes/views details ---
+        snippet_ids = [row['id'] for row in snippets_rows]
+        snippet_details = {}
+        if snippet_ids:
+            for row in snippets_rows: snippet_details[row['id']] = {'views': row['views'] or 0, 'upvotes': 0, 'downvotes': 0}
+            placeholders = ','.join('?' * len(snippet_ids))
+            votes_rows = conn.execute(f'''SELECT snippet_id, SUM(CASE vote_type WHEN 1 THEN 1 ELSE 0 END) up, SUM(CASE vote_type WHEN -1 THEN 1 ELSE 0 END) down FROM votes WHERE snippet_id IN ({placeholders}) GROUP BY snippet_id''', snippet_ids).fetchall()
+            for vote_row in votes_rows:
+                 if vote_row['snippet_id'] in snippet_details:
+                     snippet_details[vote_row['snippet_id']]['upvotes'] = vote_row['up']
+                     snippet_details[vote_row['snippet_id']]['downvotes'] = vote_row['down']
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Processed snippet vote/view details.")
+        # --- End Debug Print ---
+
+        # --- Process Snippets for Template ---
+        snippets_data_for_template = []
+        for row in snippets_rows:
+            snippet_dict = dict(row)
+            details = snippet_details.get(row['id'], {})
+            snippet_dict.update(details)
+            snippet_dict['created_at'] = parse_db_date(snippet_dict.get('created_at'))
+            snippets_data_for_template.append(snippet_dict)
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Processed snippets into snippets_data_for_template.")
+        # --- End Debug Print ---
+
+        # --- Fetch viewer interaction data ---
+        user_favorites_ids = set()
+        user_bookmarks_ids = set()
+        if viewer_user_id:
+             try:
+                 fav_rows = conn.execute('SELECT snippet_id FROM favorites WHERE user_id = ?', (viewer_user_id,)).fetchall()
+                 user_favorites_ids = {row['snippet_id'] for row in fav_rows}
+             except sqlite3.Error as e_fav:
+                 app.logger.warning(f"DB error fetching favorites for viewer {viewer_user_id} on profile {profile_user_id}: {e_fav}")
+             try:
+                 bookmark_rows = conn.execute('SELECT snippet_id FROM bookmarks WHERE user_id = ?', (viewer_user_id,)).fetchall()
+                 user_bookmarks_ids = {row['snippet_id'] for row in bookmark_rows}
+             except sqlite3.Error as e_book:
+                 app.logger.warning(f"DB error fetching bookmarks for viewer {viewer_user_id} on profile {profile_user_id}: {e_book}")
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Fetched viewer interactions. Fav IDs: {len(user_favorites_ids)}, Bookmark IDs: {len(user_bookmarks_ids)}")
+        # --- End Debug Print ---
+
+        profile_setup_complete = bool(user_data_row['profile_setup'])
+        # --- Start Debug Print ---
+        # print(f"DEBUG: Profile setup complete: {profile_setup_complete}")
+        # --- End Debug Print ---
+
+        # === CONDITIONAL RENDERING ===
+        # --- Start Debug Print ---
+        print(f"DEBUG: Checking conditional rendering. is_own_profile: {is_own_profile}") # Keep this print
+        # --- End Debug Print ---
+        if is_own_profile:
+            # --- Start Debug Print ---
+            print(f"DEBUG: Branch 'if is_own_profile' entered. Attempting to render profile.html") # Keep this print
+            # --- End Debug Print ---
+
+            # !!! RENDER_TEMPLATE CALL IS RESTORED !!!
+            return render_template('profile.html',
+                                   user=user_data_row,
+                                   join_date=join_date_obj,
+                                   bio=user_data_row['bio'],
+                                   profile_picture=user_data_row['profile_picture'],
+                                   snippet_count=snippet_count,
+                                   followers_count=followers_count,
+                                   following_count=following_count,
+                                   snippets=snippets_data_for_template,
+                                   snippet_views_map={k: v['views'] for k, v in snippet_details.items()},
+                                   user_favorites_ids=user_favorites_ids,
+                                   user_bookmarks_ids=user_bookmarks_ids,
+                                   profile_setup=profile_setup_complete,
+                                   is_own_profile=True,
+                                   is_following=False
+                                   )
+        else: # Render Public Profile
+            # --- Start Debug Print ---
+            print(f"DEBUG: Branch 'else' (for user_profile.html) entered.") # Keep this print
+            # --- End Debug Print ---
+            # --- Render PUBLIC profile template ---
+            total_upvotes = 0
+            try:
+                total_upvotes_row = conn.execute('''
+                     SELECT SUM(CASE WHEN v.vote_type = 1 THEN 1 ELSE 0 END) as total_ups
+                     FROM votes v JOIN snippets s ON v.snippet_id = s.id
+                     WHERE s.user_id = ? AND s.is_private = 0
+                ''', (profile_user_id,)).fetchone()
+                if total_upvotes_row and total_upvotes_row['total_ups'] is not None:
+                    total_upvotes = total_upvotes_row['total_ups']
+            except sqlite3.Error as e_upvotes:
+                 app.logger.warning(f"DB error fetching total upvotes for profile {profile_user_id}: {e_upvotes}")
+
+            stats_tuple = (followers_count, following_count, snippet_count, total_upvotes)
+            # --- Start Debug Print ---
+            print(f"DEBUG: Calculated stats_tuple: {stats_tuple}. Attempting to render user_profile.html") # Keep this print
+            # --- End Debug Print ---
+            return render_template('user_profile.html',
+                                   user=user_data_row,
+                                   stats=stats_tuple,
+                                   snippets=snippets_data_for_template,
+                                   is_following=is_following,
+                                   join_date=join_date_obj
+                                  )
+
+        # This print should ideally NOT be reached
+        # print("DEBUG: *** MAJOR WARNING: Reached end of TRY block without returning! Check conditional logic. ***")
+
+    # --- Error Handling (Keep `raise e` active for debugging template errors) ---
+    except sqlite3.Error as e:
+        app.logger.error(f"DB Error rendering profile for user '{username or 'self'}': {e}")
+        flash("Error loading profile due to a database issue.", "error")
+        print(f"DEBUG: *** sqlite3.Error caught: {e} ***")
+        raise e # Let Flask show the error page during debug
+
+    except Exception as e:
+        app.logger.error(f"General Error rendering profile for user '{username or 'self'}': {e}", exc_info=True)
+        flash("An unexpected error occurred while loading the profile.", "error")
+        print(f"DEBUG: *** Exception caught: {e} ***")
+        raise e # Let Flask show the error page during debug
+
+    # This print should definitely NOT be reached if logic is correct
+    # print("DEBUG: *** MAJOR WARNING: Reached end of FUNCTION without returning! Check logic. ***")
+    # Fallback return removed as `raise e` should handle errors now
+
+# --- Setup/Settings Routes ---
 @app.route('/setup_profile', methods=['GET', 'POST'])
 def setup_profile():
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    c = conn.cursor()
-    
-    user = c.execute('''
-        SELECT id, username, email, password, created_at, profile_picture, 
-               bio, age, dob, profession, profile_setup 
-        FROM users 
-        WHERE id = ?
-    ''', (session['user_id'],)).fetchone()
-    
-    if not user:
-        conn.close()
-        flash('User not found.', 'error')
-        return redirect(url_for('login'))
-    
-    if user['profile_setup'] == 1:
-        conn.close()
-        flash('Profile already set up. Edit via Settings.', 'info')
-        return redirect(url_for('profile'))
-    
-    if request.method == 'POST':
-        bio = request.form.get('bio')
-        age = request.form.get('age')
-        dob = request.form.get('dob')
-        profession = request.form.get('profession')
-        full_name = request.form.get('full_name')
-        status = request.form.get('status')
-        experience = request.form.get('experience')
-        education = request.form.get('education')
-        skills = ','.join(request.form.getlist('skills[]')) if request.form.getlist('skills[]') else ''
-        country = request.form.get('country')
-        website = request.form.get('website')
-        
-        if 'profile_picture' in request.files:
-            file = request.files['profile_picture']
-            if file.filename != '' and allowed_file(file.filename):
-                filename = secure_filename(f"{session['user_id']}_{file.filename}")
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                c.execute('UPDATE users SET profile_picture = ? WHERE id = ?', 
-                         (filename, session['user_id']))
-        
-        if not bio or len(bio) > 200:
-            flash('Bio is required and must be under 200 characters.', 'error')
-        elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
-            flash('Age must be a number between 13 and 120.', 'error')
-        elif dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
-            flash('Date of birth must be in YYYY-MM-DD format.', 'error')
-        else:
-            c.execute('''
-                UPDATE users 
-                SET bio = ?, age = ?, dob = ?, profession = ?, full_name = ?, 
-                    status = ?, experience = ?, education = ?, skills = ?, 
-                    country = ?, website = ?, profile_setup = 1
-                WHERE id = ?
-            ''', (bio, int(age) if age else None, dob, profession, full_name, 
-                  status, int(experience) if experience else None, education, 
-                  skills, country, website, session['user_id']))
-            conn.commit()
-            conn.close()
-            flash('Profile set up successfully!', 'success')
-            return redirect(url_for('profile'))
-    
-    conn.close()
-    return render_template('setup_profile.html', user=user)
 
-# ----- End of replaced setup_profile function -----
+    conn = get_db()
+    try:
+        user = conn.execute('''
+            SELECT id, username, email, password, created_at, profile_picture,
+                   bio, age, dob, profession, profile_setup, full_name, status,
+                   experience, education, skills, country, website
+            FROM users
+            WHERE id = ?
+        ''', (user_id,)).fetchone()
+
+        if not user:
+            flash('User not found.', 'error')
+            return redirect(url_for('login'))
+
+        if user['profile_setup'] == 1:
+            flash('Profile already set up. Edit via Settings.', 'info')
+            return redirect(url_for('profile'))
+
+        if request.method == 'POST':
+            # Extract form data
+            bio = request.form.get('bio')
+            age = request.form.get('age')
+            dob = request.form.get('dob')
+            profession = request.form.get('profession')
+            full_name = request.form.get('full_name')
+            status = request.form.get('status')
+            experience = request.form.get('experience')
+            education = request.form.get('education')
+            skills = ','.join(request.form.getlist('skills[]')) if request.form.getlist('skills[]') else ''
+            country = request.form.get('country')
+            website = request.form.get('website')
+            filename = user['profile_picture'] # Keep existing picture unless new one uploaded
+
+            # Handle file upload
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file.filename != '' and allowed_file(file.filename):
+                    # Ensure secure filename includes user ID for uniqueness
+                    base, ext = os.path.splitext(file.filename)
+                    filename = secure_filename(f"{user_id}_{base}{ext}")
+                    try:
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    except Exception as e_save:
+                        app.logger.error(f"Error saving profile picture '{filename}' for user {user_id}: {e_save}")
+                        flash("Error saving profile picture.", "error")
+                        # Decide if you want to proceed without the picture or return
+                        # return render_template('setup_profile.html', user=user) # Or maybe revert filename?
+
+            # Basic Validation
+            if not bio or len(bio) > 200:
+                flash('Bio is required and must be under 200 characters.', 'error')
+            elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
+                flash('Age must be a number between 13 and 120.', 'error')
+            elif dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
+                flash('Date of birth must be in YYYY-MM-DD format.', 'error')
+            else:
+                 # Update user data
+                conn.execute('''
+                    UPDATE users
+                    SET bio = ?, age = ?, dob = ?, profession = ?, full_name = ?,
+                        status = ?, experience = ?, education = ?, skills = ?,
+                        country = ?, website = ?, profile_picture = ?, profile_setup = 1
+                    WHERE id = ?
+                ''', (bio, int(age) if age else None, dob, profession, full_name,
+                      status, int(experience) if experience else None, education,
+                      skills, country, website, filename, user_id))
+                conn.commit()
+                flash('Profile set up successfully!', 'success')
+                return redirect(url_for('profile'))
+
+            # If validation fails on POST, re-render form
+            # It will fall through to the render_template below
+
+        # Render form for GET or failed POST
+        return render_template('setup_profile.html', user=user)
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"Database error during profile setup for user {user_id}: {e}")
+        flash("Database error during profile setup.", "error")
+        # In case of DB error during GET/POST, redirecting might be safer
+        # than trying to re-render with potentially inconsistent data.
+        return redirect(url_for('profile')) # Redirect somewhere sensible on DB error
+    except Exception as e: # Catch potential non-DB errors during POST processing
+        app.logger.error(f"General error during profile setup for user {user_id}: {e}", exc_info=True)
+        flash("An unexpected error occurred during profile setup.", "error")
+        # Re-render form if possible, otherwise redirect
+        # Re-fetching user might fail if the error was DB-related initially
+        user_data_for_render = user if 'user' in locals() else None # Check if user was fetched
+        if user_data_for_render:
+             return render_template('setup_profile.html', user=user_data_for_render)
+        else:
+             return redirect(url_for('profile'))
+
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    if request.method == 'POST':
-        bio = request.form.get('bio')
-        age = request.form.get('age')
-        dob = request.form.get('dob')
-        profession = request.form.get('profession')
-        
-        if 'profile_picture' in request.files:
-            file = request.files['profile_picture']
-            if file.filename != '' and allowed_file(file.filename):
-                filename = secure_filename(f"{session['user_id']}_{file.filename}")
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                c.execute('UPDATE users SET profile_picture = ? WHERE id = ?', 
-                         (filename, session['user_id']))
-        
-        if not bio or len(bio) > 200:
-            flash('Bio is required and must be under 200 characters.', 'error')
-        elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
-            flash('Age must be a number between 13 and 120.', 'error')
-        elif dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
-            flash('Date of birth must be in YYYY-MM-DD format.', 'error')
-        else:
-            c.execute('''
-                UPDATE users 
-                SET bio = ?, age = ?, dob = ?, profession = ?
-                WHERE id = ?
-            ''', (bio, int(age) if age else None, dob, profession, session['user_id']))
-            conn.commit()
-            flash('Settings updated successfully!', 'success')
-            conn.close()
-            return redirect(url_for('profile'))
-    
-    user = c.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
-    conn.close()
-    
-    return render_template('settings.html', user=user)
+
+    conn = get_db()
+    try:
+        if request.method == 'POST':
+            # Extract form data (similar to setup_profile, adjust fields as needed)
+            bio = request.form.get('bio')
+            age = request.form.get('age')
+            dob = request.form.get('dob')
+            profession = request.form.get('profession')
+            # Add other fields from settings form: full_name, status, experience, etc.
+            full_name = request.form.get('full_name')
+            status = request.form.get('status')
+            experience = request.form.get('experience')
+            education = request.form.get('education')
+            skills = ','.join(request.form.getlist('skills[]')) if request.form.getlist('skills[]') else ''
+            country = request.form.get('country')
+            website = request.form.get('website')
+
+            # Get current picture filename first
+            current_user = conn.execute('SELECT profile_picture FROM users WHERE id = ?', (user_id,)).fetchone()
+            filename = current_user['profile_picture'] if current_user else None
+
+            # Handle file upload
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file.filename != '' and allowed_file(file.filename):
+                    base, ext = os.path.splitext(file.filename)
+                    filename = secure_filename(f"{user_id}_{base}{ext}")
+                    try:
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    except Exception as e_save:
+                         app.logger.error(f"Error saving profile picture '{filename}' in settings for user {user_id}: {e_save}")
+                         flash("Error saving profile picture.", "error")
+                         filename = current_user['profile_picture'] if current_user else None # Revert to old pic on save error
+
+            # Basic Validation (repeat or refactor validation logic)
+            if not bio or len(bio) > 200:
+                flash('Bio is required and must be under 200 characters.', 'error')
+            elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
+                flash('Age must be a number between 13 and 120.', 'error')
+            elif dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
+                flash('Date of birth must be in YYYY-MM-DD format.', 'error')
+            else:
+                 # Update user data (include all fields from settings form)
+                conn.execute('''
+                    UPDATE users
+                    SET bio = ?, age = ?, dob = ?, profession = ?, full_name = ?,
+                        status = ?, experience = ?, education = ?, skills = ?,
+                        country = ?, website = ?, profile_picture = ?
+                    WHERE id = ?
+                ''', (bio, int(age) if age else None, dob, profession, full_name,
+                      status, int(experience) if experience else None, education,
+                      skills, country, website, filename, user_id))
+                conn.commit()
+                flash('Settings updated successfully!', 'success')
+                return redirect(url_for('profile'))
+
+        # GET Request: Fetch user data for the form
+        # Ensure you fetch ALL fields needed to populate the settings form
+        user = conn.execute('''
+            SELECT id, username, email, bio, age, dob, profession, profile_picture,
+                   full_name, status, experience, education, skills, country, website
+            FROM users WHERE id = ?
+        ''', (user_id,)).fetchone()
+
+        if not user:
+            flash('User not found.', 'error')
+            return redirect(url_for('login'))
+
+        return render_template('settings.html', user=user)
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"Database error during settings update for user {user_id}: {e}")
+        flash("Database error saving settings.", "error")
+        # Fetch user data again for rendering the form even after error
+        user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+        return render_template('settings.html', user=user) # Re-render form on DB error
+
 
 @app.route('/upload_profile_picture', methods=['POST'])
 def upload_profile_picture():
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         flash('Please login first.', 'error')
         return redirect(url_for('login'))
-    
+
     if 'profile_picture' not in request.files:
         flash('No file part', 'error')
-        return redirect(url_for('profile'))
-    
+        return redirect(request.referrer or url_for('profile')) # Go back
+
     file = request.files['profile_picture']
-    
+
     if file.filename == '':
         flash('No file selected', 'error')
-        return redirect(url_for('profile'))
-    
-    if file and allowed_file(file.filename):
-        filename = secure_filename(f"{session['user_id']}_{file.filename}")
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute('UPDATE users SET profile_picture = ? WHERE id = ?', 
-                 (filename, session['user_id']))
-        conn.commit()
-        conn.close()
-        
-        flash('Profile picture updated successfully!', 'success')
-        return redirect(url_for('profile'))
-    
-    flash('Invalid file type. Allowed types: png, jpg, jpeg, gif', 'error')
-    return redirect(url_for('profile'))
+        return redirect(request.referrer or url_for('profile'))
 
+    if file and allowed_file(file.filename):
+        base, ext = os.path.splitext(file.filename)
+        filename = secure_filename(f"{user_id}_{base}{ext}")
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        conn = get_db()
+        try:
+            file.save(file_path)
+            conn.execute('UPDATE users SET profile_picture = ? WHERE id = ?', (filename, user_id))
+            conn.commit()
+            flash('Profile picture updated successfully!', 'success')
+            return redirect(url_for('profile'))
+        except sqlite3.Error as e:
+            conn.rollback()
+            app.logger.error(f"DB Error updating profile picture filename for user {user_id}: {e}")
+            flash('Database error saving picture reference.', 'error')
+        except Exception as e_save:
+             app.logger.error(f"Error saving profile picture file '{filename}' for user {user_id}: {e_save}")
+             flash('Error saving picture file.', 'error')
+        return redirect(request.referrer or url_for('profile'))
+
+    else: # File type not allowed
+        flash('Invalid file type. Allowed types: png, jpg, jpeg, gif', 'error')
+        return redirect(request.referrer or url_for('profile'))
+
+# --- Follower/Following Routes ---
 @app.route('/get_followers')
 def get_followers():
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         return jsonify({'success': False, 'message': 'Please login first'}), 401
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    followers = c.execute('''
-        SELECT u.username, 
-               (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count,
-               u.profile_picture
-        FROM users u
-        JOIN followers f ON u.id = f.follower_id
-        WHERE f.followed_id = ?
-    ''', (session['user_id'],)).fetchall()
-    
-    conn.close()
-    
-    return jsonify({
-        'followers': [{'username': f[0], 'snippet_count': f[1], 'profile_picture': f[2]} for f in followers]
-    })
+
+    conn = get_db()
+    try:
+        followers = conn.execute('''
+            SELECT u.username, u.profile_picture,
+                   (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count
+            FROM users u
+            JOIN followers f ON u.id = f.follower_id
+            WHERE f.followed_id = ?
+        ''', (user_id,)).fetchall()
+
+        return jsonify({
+            'followers': [{'username': f['username'], 'snippet_count': f['snippet_count'], 'profile_picture': f['profile_picture']} for f in followers]
+        })
+    except sqlite3.Error as e:
+        app.logger.error(f"DB Error fetching followers for user {user_id}: {e}")
+        return jsonify({'success': False, 'message': 'Database error'}), 500
+
 
 @app.route('/get_following')
 def get_following():
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         return jsonify({'success': False, 'message': 'Please login first'}), 401
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    following = c.execute('''
-        SELECT u.username, 
-               (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count,
-               u.profile_picture
-        FROM users u
-        JOIN followers f ON u.id = f.followed_id
-        WHERE f.follower_id = ?
-    ''', (session['user_id'],)).fetchall()
-    
-    conn.close()
-    
-    return jsonify({
-        'following': [{'username': f[0], 'snippet_count': f[1], 'profile_picture': f[2]} for f in following]
-    })
+
+    conn = get_db()
+    try:
+        following = conn.execute('''
+            SELECT u.username, u.profile_picture,
+                   (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count
+            FROM users u
+            JOIN followers f ON u.id = f.followed_id
+            WHERE f.follower_id = ?
+        ''', (user_id,)).fetchall()
+
+        return jsonify({
+            'following': [{'username': f['username'], 'snippet_count': f['snippet_count'], 'profile_picture': f['profile_picture']} for f in following]
+        })
+    except sqlite3.Error as e:
+        app.logger.error(f"DB Error fetching following list for user {user_id}: {e}")
+        return jsonify({'success': False, 'message': 'Database error'}), 500
+
+@app.route('/follow/<username>', methods=['POST'])
+def follow_user(username):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please login first'}), 401
+
+    conn = get_db()
+    try:
+        target_user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
+
+        if not target_user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        target_user_id = target_user['id']
+        if target_user_id == user_id:
+            return jsonify({'success': False, 'message': 'Cannot follow yourself'}), 400
+
+        conn.execute('INSERT INTO followers (follower_id, followed_id) VALUES (?, ?)', (user_id, target_user_id))
+        conn.commit()
+        return jsonify({'success': True, 'message': f'Now following {username}'})
+
+    except sqlite3.IntegrityError: # Already following
+        conn.rollback()
+        # It's okay if they are already following, return success? Or a specific status?
+        # Returning success might be better UX than an error here.
+        # return jsonify({'success': False, 'message': 'Already following'}), 409 # Conflict
+        return jsonify({'success': True, 'message': f'Already following {username}'})
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"DB Error user {user_id} following {username}: {e}")
+        return jsonify({'success': False, 'message': 'Database error'}), 500
+
+@app.route('/unfollow/<username>', methods=['POST'])
+def unfollow_user(username):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Please login first'}), 401
+
+    conn = get_db()
+    try:
+        target_user = conn.execute('SELECT id FROM users WHERE username = ?', (username,)).fetchone()
+
+        if not target_user:
+             return jsonify({'success': False, 'message': 'User not found'}), 404
+
+        target_user_id = target_user['id']
+
+        # Check if actually following before deleting? Optional.
+        deleted = conn.execute('''
+            DELETE FROM followers
+            WHERE follower_id = ? AND followed_id = ?
+        ''', (user_id, target_user_id))
+        conn.commit()
+
+        # Check if a row was actually deleted using deleted.rowcount (might be driver dependent)
+        # if deleted.rowcount > 0:
+        return jsonify({'success': True, 'message': f'Unfollowed {username}'})
+        # else:
+        #     # If not following, is it an error or success? Success is usually better UX.
+        #     return jsonify({'success': True, 'message': f'You were not following {username}'})
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"DB Error user {user_id} unfollowing {username}: {e}")
+        return jsonify({'success': False, 'message': 'Database error'}), 500
+
+
+# --- Explore and Snippet Viewing ---
+
+# Helper function for trending topics
+def get_trending_topics():
+    """Fetches top 10 most frequent languages from recent public snippets."""
+    conn = get_db() # Use get_db
+    try:
+        cursor = conn.execute("""
+            SELECT language, COUNT(*) as count FROM snippets
+            WHERE is_private = 0 AND language IS NOT NULL AND language != '' AND created_at > date('now', '-7 days')
+            GROUP BY language ORDER BY count DESC, language ASC LIMIT 10
+        """)
+        # Return list of dicts (Row objects behave like dicts)
+        return cursor.fetchall()
+    except sqlite3.Error as e:
+        app.logger.error(f"Database error in get_trending_topics: {e}")
+        return [] # Return empty list on error
 
 @app.route('/explore')
 def explore():
+    viewer_user_id = get_current_user_id()
     sort = request.args.get('sort', 'newest')
-    topic_filter = request.args.get('topic') # Get topic from query parameters
+    topic_filter = request.args.get('topic')
+    conn = get_db()
 
-    conn = None # Initialize connection variable
-    snippets = [] # Initialize snippets list
+    snippets_data = []
+    user_favorites_ids = set()
+    user_bookmarks_ids = set()
+
     try:
-        conn = sqlite3.connect(DATABASE)
-        # Use Row factory to access columns by name, makes code more readable
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        # Base query: Select necessary snippet data, join with users, calculate votes
         query = """
             SELECT
-                s.id, s.title, s.language, s.description, s.created_at,
-                u.username, -- Get username from joined users table
-                (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up') as upvotes,
-                (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down') as downvotes,
-                s.user_id
+                s.id, s.title, s.language, s.description, s.created_at, s.views,
+                s.user_id, -- Include owner ID
+                u.username AS owner_username,
+                COALESCE(v.upvotes, 0) as upvotes,
+                COALESCE(v.downvotes, 0) as downvotes
             FROM snippets s
             JOIN users u ON s.user_id = u.id
-            WHERE s.is_private = 0 -- Only show public snippets in explore
+            LEFT JOIN ( -- Pre-calculate votes per snippet
+                SELECT
+                    snippet_id,
+                    SUM(CASE WHEN vote_type = 1 THEN 1 ELSE 0 END) as upvotes,
+                    SUM(CASE WHEN vote_type = -1 THEN 1 ELSE 0 END) as downvotes
+                FROM votes
+                GROUP BY snippet_id
+            ) v ON s.id = v.snippet_id
+            WHERE s.is_private = 0
         """
-        params = [] # List to hold query parameters safely
+        params = []
 
-        # Add filtering if a topic is specified
         if topic_filter:
-            query += " AND s.language = ? "
+            query += " AND s.language = ?"
             params.append(topic_filter)
 
-        # Add sorting based on the 'sort' parameter
-        if sort == 'newest':
-            query += " ORDER BY s.created_at DESC"
-        elif sort == 'most-upvoted':
-             # Order by net votes (up - down), then creation date as tie-breaker
-             query += """
-                ORDER BY (
-                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up')
-                    -
-                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down')
-                ) DESC, s.created_at DESC
-            """
+        if sort == 'most-upvoted':
+            query += " ORDER BY (COALESCE(v.upvotes, 0) - COALESCE(v.downvotes, 0)) DESC, s.created_at DESC"
         elif sort == 'trending':
-             # Define 'trending' logic. A simple example: recent highly-upvoted.
-             # This might require a more complex calculation depending on your definition.
-             # For now, let's make it the same as 'most-upvoted' for simplicity.
+             # Add a simple trending logic (e.g., recent + votes/views)
+             # This is a basic example: votes in last 7 days
              query += """
                  ORDER BY (
-                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up')
-                    -
-                    (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down')
+                     SELECT COUNT(*) FROM votes v_trend
+                     WHERE v_trend.snippet_id = s.id AND v_trend.created_at > datetime('now', '-7 days') AND v_trend.vote_type = 1
                  ) DESC, s.created_at DESC
              """
-        else: # Default sort is 'newest'
+        else: # Default 'newest'
             query += " ORDER BY s.created_at DESC"
 
-        # --- Execute the constructed query ---
-        cursor.execute(query, params)
-        raw_snippets = cursor.fetchall()
+        snippets_rows = conn.execute(query, params).fetchall()
 
-        # --- CONVERSION STEP (Date string to datetime object) ---
-        # This assumes your template expects the structure below.
-        # Template needs: 0:id, 1:title, 2:language, 3:description,
-        #                 4:created_at (datetime), 5:username, 6:upvotes,
-        #                 7:downvotes, 8:user_id
-        for row in raw_snippets:
-            # Convert the fetched row into a list to modify the date
-            snippet_data = list(row)
-            created_at_val = snippet_data[4] # created_at is at index 4
+        for row in snippets_rows:
+            snippet_dict = dict(row)
+            snippet_dict['created_at'] = parse_db_date(snippet_dict.get('created_at'))
+            snippets_data.append(snippet_dict)
 
-            # Convert string date from DB to datetime object if necessary
-            if isinstance(created_at_val, str):
-                try:
-                    # Adjust format '%Y-%m-%d %H:%M:%S' if your database stores it differently
-                    snippet_data[4] = datetime.strptime(created_at_val, '%Y-%m-%d %H:%M:%S')
-                except (ValueError, TypeError):
-                    print(f"Warning: Could not parse date string: {created_at_val} for snippet ID {row['id']}")
-                    snippet_data[4] = None # Set to None if parsing fails
-            elif not isinstance(created_at_val, datetime):
-                 snippet_data[4] = None # Ensure it's either datetime or None
-
-            snippets.append(tuple(snippet_data)) # Add the processed tuple to the list
+        if viewer_user_id:
+             try:
+                fav_rows = conn.execute('SELECT snippet_id FROM favorites WHERE user_id = ?', (viewer_user_id,)).fetchall()
+                user_favorites_ids = {row['snippet_id'] for row in fav_rows}
+             except sqlite3.Error as e: app.logger.warning(f"DB Err fav explore user {viewer_user_id}: {e}")
+             try:
+                bookmark_rows = conn.execute('SELECT snippet_id FROM bookmarks WHERE user_id = ?', (viewer_user_id,)).fetchall()
+                user_bookmarks_ids = {row['snippet_id'] for row in bookmark_rows}
+             except sqlite3.Error as e: app.logger.warning(f"DB Err bookmark explore user {viewer_user_id}: {e}")
 
     except sqlite3.Error as e:
-        print(f"Database error in explore route: {e}")
-        flash('An error occurred while retrieving snippets.', 'error')
-        snippets = [] # Ensure snippets is an empty list on error
-    finally:
-        if conn:
-            conn.close() # Make sure the connection is closed
+        app.logger.error(f"Database error in explore route: {e}")
+        flash('An error occurred loading snippets.', 'error')
+        snippets_data = []
+        user_favorites_ids = set()
+        user_bookmarks_ids = set()
 
-    # Fetch trending topics (uses its own connection handling now)
-    trending_topics = get_trending_topics()
+    trending_topics_data = get_trending_topics() # Fetch using helper
 
-    # Pass the processed data to the template
     return render_template('explore.html',
-                           snippets=snippets, # List of tuples with datetime objects
-                           trending_topics=trending_topics,
-                           sort=sort)
-                           # Add pagination object later if needed
-                           # pagination=pagination_object)
-# === END REVISED explore FUNCTION ===
+                           snippets=snippets_data,
+                           trending_topics=trending_topics_data, # Pass fetched data
+                           current_sort=sort,
+                           current_topic=topic_filter,
+                           user_favorites_ids=user_favorites_ids,
+                           user_bookmarks_ids=user_bookmarks_ids)
 
-
-# === REVISED get_trending_topics FUNCTION ===
-def get_trending_topics():
-    """Fetches top 10 most frequent languages from recent public snippets."""
-    conn = None
-    try:
-        conn = sqlite3.connect(DATABASE)
-        conn.row_factory = sqlite3.Row # Access results by column name
-        cursor = conn.cursor()
-
-        # Query for language counts in the last 7 days (adjust as needed)
-        cursor.execute("""
-            SELECT language, COUNT(*) as count
-            FROM snippets
-            WHERE is_private = 0 -- Only public snippets
-              AND language IS NOT NULL AND language != '' -- Ensure language exists
-              AND created_at > datetime('now', '-7 days') -- Snippets from the last week
-            GROUP BY language
-            ORDER BY count DESC, language ASC -- Order by count, then alphabetically
-            LIMIT 10 -- Get top 10
-        """)
-        topics = cursor.fetchall()
-
-        # Convert Row objects to simple (language, count) tuples
-        return [(row['language'], row['count']) for row in topics]
-
-    except sqlite3.Error as e:
-        print(f"Database error in get_trending_topics: {e}")
-        return [] # Return an empty list if there's an error
-    finally:
-        if conn:
-            conn.close() # Always close the connection
 
 @app.route('/explore/snippet/<int:id>')
 def view_snippet_explore(id):
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    snippet = c.execute("""
-        SELECT s.id, s.title, s.code, s.language, s.description, 
-               s.created_at, u.username, u.id as user_id
-        FROM snippets s
-        JOIN users u ON s.user_id = u.id
-        WHERE s.id = ? AND s.is_private = 0
-    """, (id,)).fetchone()
-    
-    if snippet is None:
-        conn.close()
-        flash('Snippet not found or is private', 'error')
-        return redirect(url_for('explore'))
-    
-    comments = c.execute('''
-        SELECT c.id, c.content, c.created_at, u.username, c.parent_id
-        FROM comments c
-        JOIN users u ON c.user_id = u.id
-        WHERE c.snippet_id = ? AND c.parent_id IS NULL
-        ORDER BY c.created_at DESC
-    ''', (id,)).fetchall()
-    
-    comments_list = []
-    for comment in comments:
-        comment_dict = {
-            'id': comment[0],
-            'content': comment[1],
-            'created_at': comment[2],
-            'username': comment[3],
-            'parent_id': comment[4],
-            'replies': []
-        }
-        replies = c.execute('''
-            SELECT c.id, c.content, c.created_at, u.username
-            FROM comments c
-            JOIN users u ON c.user_id = u.id
-            WHERE c.parent_id = ?
-            ORDER BY c.created_at ASC
-        ''', (comment[0],)).fetchall()
-        comment_dict['replies'] = [{'id': r[0], 'content': r[1], 'created_at': r[2], 'username': r[3]} for r in replies]
-        comments_list.append(comment_dict)
-    
-    conn.close()
-    
-    return render_template('view_snippet_explore.html', 
-                         snippet=snippet, 
-                         comments=comments_list)
+    """Displays a single public snippet, comments, and viewer's interaction status."""
+    conn = get_db()
+    viewer_user_id = get_current_user_id()
 
-@app.route('/api/comments', methods=['POST'])
-def create_comment():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Please login to comment'}), 401
-        
-    data = request.json
-    
-    if not data.get('content') or not data.get('snippet_id'):
-        return jsonify({'success': False, 'error': 'Content and snippet ID are required'}), 400
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
+    snippet_dict = None
+    root_comments = []
+    is_bookmarked = False
+    is_favorited = False # Favorite status of viewer for THIS snippet
+    user_vote = None
+
     try:
-        snippet = c.execute('SELECT id FROM snippets WHERE id = ?', 
-                          (data['snippet_id'],)).fetchone()
-        if not snippet:
-            conn.close()
-            return jsonify({'success': False, 'error': 'Snippet not found'}), 404
-            
-        if data.get('parent_id'):
-            parent = c.execute('SELECT id FROM comments WHERE id = ?', 
-                             (data['parent_id'],)).fetchone()
-            if not parent:
-                conn.close()
-                return jsonify({'success': False, 'error': 'Parent comment not found'}), 404
-        
-        c.execute('''
-            INSERT INTO comments (snippet_id, user_id, parent_id, content)
-            VALUES (?, ?, ?, ?)
-        ''', (data['snippet_id'], session['user_id'], data.get('parent_id'), data['content']))
-        
-        conn.commit()
-        conn.close()
-        return jsonify({'success': True, 'message': 'Comment posted successfully'})
+        snippet_row = conn.execute("""
+            SELECT
+                s.*, u.username as owner_username,
+                COALESCE(v.upvotes, 0) as upvotes,
+                COALESCE(v.downvotes, 0) as downvotes
+            FROM snippets s
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN (
+                 SELECT snippet_id, SUM(CASE WHEN vote_type = 1 THEN 1 ELSE 0 END) as upvotes,
+                        SUM(CASE WHEN vote_type = -1 THEN 1 ELSE 0 END) as downvotes
+                 FROM votes GROUP BY snippet_id
+            ) v ON s.id = v.snippet_id
+            WHERE s.id = ? AND s.is_private = 0
+        """, (id,)).fetchone()
+
+        if not snippet_row:
+            flash('Snippet not found or is private', 'error')
+            return redirect(url_for('explore'))
+
+        snippet_dict = dict(snippet_row)
+
+        # Increment View Count (Best effort)
+        try:
+            conn.execute('UPDATE snippets SET views = COALESCE(views, 0) + 1 WHERE id = ?', (id,))
+            conn.commit()
+        except sqlite3.Error as e_view:
+            conn.rollback() # Rollback only the view count update
+            app.logger.warning(f"Failed to increment view count for snippet {id}: {e_view}")
+
+        # Fetch Comments (Nested Structure)
+        comments_rows = conn.execute('''
+            SELECT c.id, c.content, c.created_at, u.username, u.profile_picture, c.parent_id
+            FROM comments c JOIN users u ON c.user_id = u.id
+            WHERE c.snippet_id = ?
+            ORDER BY c.parent_id NULLS FIRST, c.created_at ASC
+        ''', (id,)).fetchall()
+
+        comments_by_id = {}
+        for row in comments_rows:
+            comment = dict(row)
+            comment['created_at'] = parse_db_date(comment.get('created_at'))
+            comment['replies'] = []
+            comments_by_id[comment['id']] = comment
+
+        root_comments = []
+        for comment_id, comment in comments_by_id.items():
+            parent_id = comment['parent_id']
+            if parent_id is None:
+                root_comments.append(comment)
+            elif parent_id in comments_by_id:
+                 comments_by_id[parent_id]['replies'].append(comment)
+
+        # Fetch Viewer's Status (Vote, Bookmark, Favorite) IF Logged In
+        if viewer_user_id:
+             try:
+                 bookmark_check = conn.execute('SELECT 1 FROM bookmarks WHERE user_id = ? AND snippet_id = ?', (viewer_user_id, id)).fetchone()
+                 is_bookmarked = bool(bookmark_check)
+             except sqlite3.Error as e_bm: app.logger.warning(f"DB error checking bookmark status snip {id} user {viewer_user_id}: {e_bm}")
+             try:
+                 vote_check = conn.execute('SELECT vote_type FROM votes WHERE user_id = ? AND snippet_id = ?', (viewer_user_id, id)).fetchone()
+                 if vote_check: user_vote = vote_check['vote_type']
+             except sqlite3.Error as e_vt: app.logger.warning(f"DB error checking vote status snip {id} user {viewer_user_id}: {e_vt}")
+             try:
+                 fav_check = conn.execute('SELECT 1 FROM favorites WHERE user_id = ? AND snippet_id = ?', (viewer_user_id, id)).fetchone()
+                 is_favorited = bool(fav_check)
+             except sqlite3.Error as e_fv: app.logger.warning(f"DB error checking favorite status snip {id} user {viewer_user_id}: {e_fv}")
+
+
+        # Parse Snippet Dates
+        snippet_dict['created_at'] = parse_db_date(snippet_dict.get('created_at'))
+        snippet_dict['updated_at'] = parse_db_date(snippet_dict.get('updated_at')) # If updated_at exists
+
+        return render_template('view_snippet_explore.html',
+                             snippet=snippet_dict,
+                             comments=root_comments,
+                             is_bookmarked=is_bookmarked,
+                             is_favorited=is_favorited,
+                             user_vote=user_vote)
+
     except sqlite3.Error as e:
-        print(f"Database error: {str(e)}")
-        conn.close()
-        return jsonify({'success': False, 'error': 'Database error occurred'}), 500
-
-@app.route('/user/<username>')
-def user_profile(username):
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-
-    user = c.execute('''
-        SELECT id, username, email, bio, profile_picture
-        FROM users
-        WHERE username = ?
-    ''', (username,)).fetchone()
-
-    if user is None:
-        conn.close()
-        flash('User not found!', 'error')
+        app.logger.error(f"DB Error viewing public snippet {id}: {e}")
+        flash('Error loading snippet details.', 'error')
+        return redirect(url_for('explore'))
+    except Exception as e:
+        app.logger.error(f"General Error viewing public snippet {id}: {e}", exc_info=True)
+        flash("An unexpected error occurred.", "error")
         return redirect(url_for('explore'))
 
-    if 'user_id' in session and user[0] == session['user_id']:
-        conn.close()
-        return redirect(url_for('profile'))
-
-    stats = c.execute('''
-        SELECT
-            (SELECT COUNT(*) FROM followers WHERE followed_id = ?) as followers_count,
-            (SELECT COUNT(*) FROM followers WHERE follower_id = ?) as following_count,
-            (SELECT COUNT(*) FROM snippets WHERE user_id = ? AND is_private = 0) as snippets_count,
-            COALESCE((SELECT SUM(CASE WHEN vote_type = 'up' THEN 1 ELSE 0 END) FROM votes v
-             JOIN snippets s ON v.snippet_id = s.id
-             WHERE s.user_id = ?), 0) as total_upvotes
-    ''', (user[0], user[0], user[0], user[0])).fetchone()
-
-    is_following = False
-    if 'user_id' in session:
-        is_following = c.execute('''
-            SELECT EXISTS(
-                SELECT 1 FROM followers
-                WHERE follower_id = ? AND followed_id = ?
-            )
-        ''', (session['user_id'], user[0])).fetchone()[0] == 1
-
-    snippets = c.execute('''
-        SELECT s.id, s.title, s.language, s.created_at,
-               (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'up') as upvotes,
-               (SELECT COUNT(*) FROM votes WHERE snippet_id = s.id AND vote_type = 'down') as downvotes,
-               s.views
-        FROM snippets s
-        WHERE s.user_id = ? AND s.is_private = 0
-        ORDER BY s.created_at DESC
-    ''', (user[0],)).fetchall()
-
-    snippet_views_map = {snippet[0]: snippet[6] for snippet in snippets}
-
-    conn.close()
-
-    return render_template('public_profile.html',
-                         user=user,
-                         profile_username=user[1],  # Pass username for JS
-                         stats=stats,
-                         snippets=snippets,
-                         is_following=is_following,
-                         snippet_views_map=snippet_views_map)
-
+# --- Snippet Management (Own) ---
 @app.route('/snippet/new', methods=['GET', 'POST'])
 def new_snippet():
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if is_ajax:
             return jsonify({'success': False, 'message': 'Please login first.'}), 401
         flash('Please login first.', 'error')
         return redirect(url_for('login'))
-        
+
     if request.method == 'POST':
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        
         title = request.form.get('title')
         code = request.form.get('code')
         language = request.form.get('language')
         description = request.form.get('description', '')
-        
+        # Add is_private if you have a checkbox in the form
+        is_private = bool(request.form.get('is_private')) # Example: <input type="checkbox" name="is_private">
+
         if not title or not code or not language:
+            msg = 'Title, code, and language are required.'
+            if is_ajax: return jsonify({'success': False, 'message': msg}), 400
+            flash(msg, 'error'); return render_template('new_snippet.html')
+
+        conn = get_db()
+        try:
+            cursor = conn.execute('''
+                INSERT INTO snippets (user_id, title, code, language, description, is_private)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (user_id, title, code.strip(), language, description, is_private))
+            snippet_id = cursor.lastrowid
+            conn.commit()
+
+            redirect_url = url_for('view_snippet', id=snippet_id) # Redirect to the private view
             if is_ajax:
-                return jsonify({'success': False, 'message': 'Title, code, and language are required.'}), 400
-            flash('Title, code, and language are required.', 'error')
-            return render_template('new_snippet.html')
-        
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO snippets (user_id, title, code, language, description)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (session['user_id'], title, code.strip(), language, description))
-        snippet_id = c.lastrowid
-        conn.commit()
-        conn.close()
-        
-        if is_ajax:
-            return jsonify({
-                'success': True, 
-                'message': 'Snippet created successfully!',
-                'redirect': url_for('view_snippet', id=snippet_id, _external=True)
-            }), 201
-        
-        flash('Snippet created successfully!', 'success')
-        return redirect(url_for('profile'))
-    
+                return jsonify({
+                    'success': True,
+                    'message': 'Snippet created successfully!',
+                    'redirect': redirect_url
+                }), 201
+            flash('Snippet created successfully!', 'success')
+            return redirect(redirect_url)
+
+        except sqlite3.Error as e:
+            conn.rollback()
+            app.logger.error(f"DB Error creating snippet for user {user_id}: {e}")
+            msg = 'Database error creating snippet.'
+            if is_ajax: return jsonify({'success': False, 'message': msg}), 500
+            flash(msg, 'error'); return render_template('new_snippet.html')
+
     return render_template('new_snippet.html')
-
-@app.route('/search_users')
-def search_users():
-    query = request.args.get('query', '').strip()
-    
-    if not query:
-        return jsonify({'users': []})
-    
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        
-        search_query = f'%{query}%'
-        users = c.execute('''
-            SELECT u.username, 
-                   (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count
-            FROM users u 
-            WHERE u.username LIKE ? 
-            LIMIT 5
-        ''', (search_query,)).fetchall()
-        
-        conn.close()
-        
-        return jsonify({
-            'users': [
-                {'username': user[0], 'snippet_count': user[1]} 
-                for user in users
-            ]
-        })
-    except sqlite3.Error as e:
-        print(f"Database error in search_users: {e}")
-        return jsonify({'users': []}), 500
-
-@app.route('/follow/<username>', methods=['POST'])
-def follow_user(username):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please login first'}), 401
-
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    target_user = c.execute('SELECT id FROM users WHERE username = ?', 
-                          (username,)).fetchone()
-    
-    if not target_user:
-        conn.close()
-        return jsonify({'success': False, 'message': 'User not found'}), 404
-        
-    if target_user[0] == session['user_id']:
-        conn.close()
-        return jsonify({'success': False, 'message': 'Cannot follow yourself'}), 400
-    
-    try:
-        c.execute('''
-            INSERT INTO followers (follower_id, followed_id)
-            VALUES (?, ?)
-        ''', (session['user_id'], target_user[0]))
-        conn.commit()
-        conn.close()
-        return jsonify({'success': True, 'message': f'Now following {username}'})
-    except sqlite3.IntegrityError:
-        conn.close()
-        return jsonify({'success': False, 'message': 'Already following'}), 400
-
-@app.route('/unfollow/<username>', methods=['POST'])
-def unfollow_user(username):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Please login first'}), 401
-
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    target_user = c.execute('SELECT id FROM users WHERE username = ?', 
-                          (username,)).fetchone()
-    
-    if not target_user:
-        conn.close()
-        return jsonify({'success': False, 'message': 'User not found'}), 404
-    
-    c.execute('''
-        DELETE FROM followers 
-        WHERE follower_id = ? AND followed_id = ?
-    ''', (session['user_id'], target_user[0]))
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'success': True, 'message': f'Unfollowed {username}'})
 
 @app.route('/snippet/<int:id>')
 def view_snippet(id):
-    if 'user_id' not in session:
+    """View own or accessible snippet (private view if owner)."""
+    user_id = get_current_user_id()
+    if not user_id:
         flash('Please login first.', 'error')
         return redirect(url_for('login'))
-        
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    c.execute('UPDATE snippets SET views = views + 1 WHERE id = ?', (id,))
-    
-    snippet = c.execute('''
-        SELECT snippets.id, snippets.title, snippets.code, snippets.language, 
-               snippets.description, snippets.created_at, users.username,
-               snippets.user_id
-        FROM snippets 
-        JOIN users ON snippets.user_id = users.id 
-        WHERE snippets.id = ?
-    ''', (id,)).fetchone()
-    
-    conn.commit()
-    conn.close()
-    
-    if snippet is None:
-        flash('Snippet not found!', 'error')
-        return redirect(url_for('explore'))
-        
-    return render_template('view_snippet.html', snippet=snippet)
+
+    conn = get_db()
+    try:
+        # Fetch snippet, check if user owns it or if it's public
+        # Also fetch owner username for display
+        snippet = conn.execute('''
+            SELECT s.*, u.username AS owner_username
+            FROM snippets s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.id = ? AND (s.user_id = ? OR s.is_private = 0)
+        ''', (id, user_id)).fetchone()
+
+        if snippet is None:
+            flash('Snippet not found or you do not have permission to view it.', 'error')
+            return redirect(url_for('profile')) # Or explore?
+
+        # Increment view count (only if viewer is not the owner?) - Optional logic
+        if snippet['user_id'] != user_id:
+            try:
+                conn.execute('UPDATE snippets SET views = COALESCE(views, 0) + 1 WHERE id = ?', (id,))
+                conn.commit()
+            except sqlite3.Error as e_view:
+                conn.rollback()
+                app.logger.warning(f"Failed to increment view count for snippet {id} (viewer {user_id}): {e_view}")
+
+        # Prepare data for template
+        snippet_data = dict(snippet)
+        snippet_data['created_at'] = parse_db_date(snippet_data.get('created_at'))
+        snippet_data['updated_at'] = parse_db_date(snippet_data.get('updated_at'))
+
+        # Fetch comments, votes, favorite status etc. if needed for this view
+        # (Similar logic as view_snippet_explore can be added here if required)
+        # For simplicity, just showing snippet details now
+
+        return render_template('view_snippet.html', snippet=snippet_data) # Pass dict
+
+    except sqlite3.Error as e:
+        conn.rollback() # Rollback view count if it was attempted before error
+        app.logger.error(f"DB Error viewing snippet {id} for user {user_id}: {e}")
+        flash('Error loading snippet.', 'error')
+        return redirect(url_for('profile'))
 
 
 @app.route('/snippet/edit/<int:id>', methods=['GET', 'POST'])
 def edit_snippet(id):
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         flash('Please login first.', 'error')
         return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    snippet = c.execute('''
-        SELECT id, title, code, language, description, is_private 
-        FROM snippets 
-        WHERE id = ? AND user_id = ?
-    ''', (id, session['user_id'])).fetchone()
-    
-    if not snippet:
-        conn.close()
-        flash('Snippet not found or unauthorized.', 'error')
-        return redirect(url_for('profile'))
-    
-    if request.method == 'POST':
-        title = request.form.get('title')
-        code = request.form.get('code')
-        language = request.form.get('language')
-        description = request.form.get('description')
-        is_private = bool(request.form.get('is_private'))
-        
-        c.execute('''
-            UPDATE snippets 
-            SET title = ?, code = ?, language = ?, description = ?, is_private = ?
+
+    conn = get_db()
+    try:
+        # Fetch snippet only if user owns it
+        snippet = conn.execute('''
+            SELECT id, title, code, language, description, is_private
+            FROM snippets
             WHERE id = ? AND user_id = ?
-        ''', (title, code, language, description, is_private, id, session['user_id']))
-        
-        conn.commit()
-        conn.close()
-        flash('Snippet updated successfully!', 'success')
-        return redirect(url_for('view_snippet', id=id))
-    
-    conn.close()
-    return render_template('edit_snippet.html', snippet=snippet)
+        ''', (id, user_id)).fetchone()
+
+        if not snippet:
+            flash('Snippet not found or unauthorized.', 'error')
+            return redirect(url_for('profile'))
+
+        if request.method == 'POST':
+            title = request.form.get('title')
+            code = request.form.get('code')
+            language = request.form.get('language')
+            description = request.form.get('description')
+            is_private = bool(request.form.get('is_private')) # Get checkbox value
+
+            if not title or not code or not language:
+                 flash('Title, code, and language are required.', 'error')
+                 # Re-render form with existing data on validation error
+                 return render_template('edit_snippet.html', snippet=snippet)
+
+            conn.execute('''
+                UPDATE snippets
+                SET title = ?, code = ?, language = ?, description = ?, is_private = ?,
+                    updated_at = CURRENT_TIMESTAMP -- Update timestamp on edit
+                WHERE id = ? AND user_id = ?
+            ''', (title, code, language, description, is_private, id, user_id))
+            conn.commit()
+            flash('Snippet updated successfully!', 'success')
+            return redirect(url_for('view_snippet', id=id)) # Redirect to the private view
+
+        # GET request: render edit form
+        return render_template('edit_snippet.html', snippet=snippet) # Pass Row object
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"DB Error editing snippet {id} for user {user_id}: {e}")
+        flash('Database error saving snippet.', 'error')
+        # Fetch snippet again to render form if update failed
+        snippet = conn.execute('SELECT * FROM snippets WHERE id = ? AND user_id = ?', (id, user_id)).fetchone()
+        if snippet:
+            return render_template('edit_snippet.html', snippet=snippet)
+        else: # If fetch fails after error, redirect
+            return redirect(url_for('profile'))
+
 
 @app.route('/snippet/<int:id>/delete', methods=['POST'])
 def delete_snippet(id):
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
+         # Can return JSON error if called via JS, or redirect otherwise
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Authentication required'}), 401
+        flash('Please login first.', 'error')
         return redirect(url_for('login'))
-        
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute('DELETE FROM snippets WHERE id = ? AND user_id = ?', 
-             (id, session['user_id']))
-    conn.commit()
-    conn.close()
-    
-    flash('Snippet deleted successfully!', 'success')
-    return redirect(url_for('profile'))
+
+    conn = get_db()
+    try:
+        # Ensure user owns the snippet before deleting
+        # Also delete related data (votes, comments, favorites, bookmarks) - IMPORTANT
+        conn.execute('BEGIN') # Use transaction
+        snippet_check = conn.execute('SELECT id FROM snippets WHERE id = ? AND user_id = ?', (id, user_id)).fetchone()
+
+        if not snippet_check:
+             conn.execute('ROLLBACK')
+             msg = 'Snippet not found or unauthorized.'
+             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                 return jsonify({'success': False, 'message': msg}), 404
+             flash(msg, 'error')
+             return redirect(url_for('profile'))
+
+        # Delete related data first (adjust table names if different)
+        conn.execute('DELETE FROM votes WHERE snippet_id = ?', (id,))
+        conn.execute('DELETE FROM comments WHERE snippet_id = ?', (id,))
+        conn.execute('DELETE FROM favorites WHERE snippet_id = ?', (id,))
+        conn.execute('DELETE FROM bookmarks WHERE snippet_id = ?', (id,))
+        # Potentially delete ratings if using that system
+        # conn.execute('DELETE FROM ratings WHERE snippet_id = ?', (id,))
+
+        # Delete the snippet itself
+        conn.execute('DELETE FROM snippets WHERE id = ? AND user_id = ?', (id, user_id))
+        conn.execute('COMMIT') # Commit transaction
+
+        msg = 'Snippet deleted successfully!'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': msg, 'redirect': url_for('profile')})
+        flash(msg, 'success')
+        return redirect(url_for('profile'))
+
+    except sqlite3.Error as e:
+        conn.execute('ROLLBACK') # Rollback transaction on error
+        app.logger.error(f"DB Error deleting snippet {id} for user {user_id}: {e}")
+        msg = 'Database error deleting snippet.'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': msg}), 500
+        flash(msg, 'error')
+        return redirect(url_for('profile'))
+
+# --- Favorites & Bookmarks ---
+
+@app.route('/snippet/<int:snippet_id>/toggle_favorite', methods=['POST'])
+def toggle_favorite(snippet_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Authentication required', 'action': 'login'}), 401
+
+    conn = get_db()
+    try:
+        # Check if snippet exists and is accessible (public or own private)
+        snippet = conn.execute('SELECT id FROM snippets WHERE id = ? AND (is_private = 0 OR user_id = ?)',
+                              (snippet_id, user_id)).fetchone()
+        if not snippet:
+            return jsonify({'success': False, 'error': 'Snippet not found or not accessible'}), 404
+
+        existing_favorite = conn.execute('SELECT 1 FROM favorites WHERE user_id = ? AND snippet_id = ?',
+                                        (user_id, snippet_id)).fetchone()
+
+        if existing_favorite:
+            conn.execute('DELETE FROM favorites WHERE user_id = ? AND snippet_id = ?', (user_id, snippet_id))
+            conn.commit()
+            app.logger.info(f"User {user_id} unfavorited snippet {snippet_id}")
+            return jsonify({'success': True, 'status': 'removed'})
+        else:
+            # Use INSERT OR IGNORE to prevent potential race conditions if clicked twice fast
+            conn.execute('INSERT OR IGNORE INTO favorites (user_id, snippet_id) VALUES (?, ?)', (user_id, snippet_id))
+            conn.commit()
+            # Check if it was actually inserted (might have been ignored)
+            new_fav = conn.execute('SELECT 1 FROM favorites WHERE user_id = ? AND snippet_id = ?',
+                                     (user_id, snippet_id)).fetchone()
+            if new_fav:
+                app.logger.info(f"User {user_id} favorited snippet {snippet_id}")
+                return jsonify({'success': True, 'status': 'added'})
+            else: # Should not happen with OR IGNORE unless deleted between insert and select
+                 app.logger.warning(f"Favorite toggle race condition or issue for user {user_id} snippet {snippet_id}")
+                 return jsonify({'success': False, 'error': 'Toggle failed, please retry'}), 500
+
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"DB error toggle favorite snip {snippet_id} user {user_id}: {e}")
+        return jsonify({'success': False, 'error': 'Database error'}), 500
+
+
+@app.route('/favorites')
+def view_favorites():
+    user_id = get_current_user_id()
+    if not user_id:
+        flash('Please login to view your favorites.', 'warning')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    try:
+        favorite_snippets_rows = conn.execute('''
+            SELECT
+                s.id, s.title, s.language, s.code, s.description, s.created_at,
+                s.updated_at, s.is_private, s.views, s.user_id as owner_id,
+                u.username as owner_username, f.favorited_at,
+                COALESCE(v.upvotes, 0) as upvotes, COALESCE(v.downvotes, 0) as downvotes
+            FROM favorites f
+            JOIN snippets s ON f.snippet_id = s.id
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN (
+                 SELECT snippet_id, SUM(CASE WHEN vote_type = 1 THEN 1 ELSE 0 END) as upvotes,
+                        SUM(CASE WHEN vote_type = -1 THEN 1 ELSE 0 END) as downvotes
+                 FROM votes GROUP BY snippet_id
+            ) v ON s.id = v.snippet_id
+            WHERE f.user_id = ?
+              AND (s.is_private = 0 OR s.user_id = ?) -- Show favorited public or OWN private snippets
+            ORDER BY f.favorited_at DESC
+        ''', (user_id, user_id)).fetchall() # Pass user_id twice for the OR condition
+
+        user_favorites_ids = {row['id'] for row in favorite_snippets_rows}
+        user_bookmarks_ids = set() # Fetch bookmarks if bookmark button is shown on favorite cards
+        try:
+            bookmark_rows = conn.execute('SELECT snippet_id FROM bookmarks WHERE user_id = ?', (user_id,)).fetchall()
+            user_bookmarks_ids = {row['snippet_id'] for row in bookmark_rows}
+        except sqlite3.Error as e_book:
+            app.logger.warning(f"DB Error fetching bookmarks on favorites page for user {user_id}: {e_book}")
+
+
+        favorite_snippets_data = []
+        for row in favorite_snippets_rows:
+            snippet_dict = dict(row)
+            # Use the robust parse_db_date helper
+            snippet_dict['created_at'] = parse_db_date(snippet_dict.get('created_at'))
+            snippet_dict['favorited_at'] = parse_db_date(snippet_dict.get('favorited_at'))
+            snippet_dict['updated_at'] = parse_db_date(snippet_dict.get('updated_at'))
+            favorite_snippets_data.append(snippet_dict)
+
+        return render_template('favorites.html',
+                               snippets=favorite_snippets_data,
+                               user_favorites_ids=user_favorites_ids,
+                               user_bookmarks_ids=user_bookmarks_ids) # Pass bookmarks if needed
+
+    except sqlite3.Error as e:
+         app.logger.error(f"DB Error fetching favorites for user {user_id}: {e}")
+         flash("Could not load favorites due to a database error.", "error")
+         return redirect(url_for('profile'))
+
+
+@app.route('/snippet/<int:snippet_id>/toggle_bookmark', methods=['POST'])
+def toggle_bookmark(snippet_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Authentication required', 'action': 'login'}), 401
+
+    conn = get_db()
+    try:
+        # Ensure the snippet exists and is PUBLIC (usually only bookmark public things)
+        # Adjust logic if you allow bookmarking private snippets
+        snippet = conn.execute(
+            'SELECT id FROM snippets WHERE id = ? AND is_private = 0', (snippet_id,)
+        ).fetchone()
+        if not snippet:
+            return jsonify({'success': False, 'error': 'Public snippet not found'}), 404
+
+        existing_bookmark = conn.execute(
+            'SELECT 1 FROM bookmarks WHERE user_id = ? AND snippet_id = ?', (user_id, snippet_id)
+        ).fetchone()
+
+        if existing_bookmark:
+            conn.execute('DELETE FROM bookmarks WHERE user_id = ? AND snippet_id = ?', (user_id, snippet_id))
+            conn.commit()
+            app.logger.info(f"User {user_id} removed bookmark: {snippet_id}")
+            return jsonify({'success': True, 'status': 'removed'})
+        else:
+            # Use INSERT OR IGNORE
+            conn.execute('INSERT OR IGNORE INTO bookmarks (user_id, snippet_id) VALUES (?, ?)', (user_id, snippet_id))
+            conn.commit()
+            # Verify insertion
+            new_bookmark = conn.execute('SELECT 1 FROM bookmarks WHERE user_id = ? AND snippet_id = ?', (user_id, snippet_id)).fetchone()
+            if new_bookmark:
+                app.logger.info(f"User {user_id} added bookmark: {snippet_id}")
+                return jsonify({'success': True, 'status': 'added'})
+            else:
+                app.logger.warning(f"Bookmark toggle race condition or issue for user {user_id} snippet {snippet_id}")
+                return jsonify({'success': False, 'error': 'Toggle failed, please retry'}), 500
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"DB error toggle bookmark snip {snippet_id} user {user_id}: {e}")
+        return jsonify({'success': False, 'error': 'Database error'}), 500
+
+@app.route('/bookmarks')
+def view_bookmarks():
+    user_id = get_current_user_id()
+    if not user_id:
+        flash('Please login to view bookmarks.', 'warning')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    try:
+        rows = conn.execute('''
+            SELECT
+                s.id, s.title, s.language, s.description, s.created_at, s.updated_at,
+                s.is_private, s.views, s.user_id as owner_id,
+                u.username as owner_username, b.bookmarked_at,
+                COALESCE(v.upvotes, 0) as upvotes, COALESCE(v.downvotes, 0) as downvotes
+            FROM bookmarks b
+            JOIN snippets s ON b.snippet_id = s.id
+            JOIN users u ON s.user_id = u.id
+            LEFT JOIN (
+                 SELECT snippet_id, SUM(CASE WHEN vote_type = 1 THEN 1 ELSE 0 END) as upvotes,
+                        SUM(CASE WHEN vote_type = -1 THEN 1 ELSE 0 END) as downvotes
+                 FROM votes GROUP BY snippet_id
+            ) v ON s.id = v.snippet_id
+            WHERE b.user_id = ? AND s.is_private = 0 -- Only show if snippet still exists & is public
+            ORDER BY b.bookmarked_at DESC
+        ''', (user_id,)).fetchall()
+
+        bookmarks_data = []
+        for row in rows:
+            snippet_dict = dict(row)
+            snippet_dict['created_at'] = parse_db_date(snippet_dict.get('created_at'))
+            snippet_dict['bookmarked_at'] = parse_db_date(snippet_dict.get('bookmarked_at'))
+            snippet_dict['updated_at'] = parse_db_date(snippet_dict.get('updated_at'))
+            bookmarks_data.append(snippet_dict)
+
+        user_bookmarks_ids = {snippet['id'] for snippet in bookmarks_data}
+        # Fetch viewer's FAVORITES to correctly display favorite button state if shown on bookmark cards
+        user_favorites_ids = set()
+        try:
+             fav_rows = conn.execute('SELECT snippet_id FROM favorites WHERE user_id=?', (user_id,)).fetchall()
+             user_favorites_ids = {r['snippet_id'] for r in fav_rows}
+        except sqlite3.Error as e_fav:
+             app.logger.warning(f"DB Error fetching favorites on bookmarks page for user {user_id}: {e_fav}")
+
+        return render_template('bookmarks.html',
+                               snippets=bookmarks_data,
+                               user_bookmarks_ids=user_bookmarks_ids,
+                               user_favorites_ids=user_favorites_ids)
+
+    except sqlite3.Error as e:
+         app.logger.error(f"DB Error fetching bookmarks user {user_id}: {e}")
+         flash("Could not load bookmarks.", "error")
+         return redirect(url_for('profile'))
+
+# --- Voting ---
+@app.route('/upvote_snippet/<int:id>', methods=['POST'])
+def upvote_snippet(id):
+    user_id = get_current_user_id()
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if not user_id:
+        if is_ajax: return jsonify({'success': False, 'message': 'Please login to vote'}), 401
+        flash('Please login to vote.', 'error'); return redirect(url_for('login'))
+
+    conn = get_db()
+    try:
+        # Ensure snippet exists and is accessible (public or own private)
+        # Important: Don't allow voting on non-accessible snippets
+        snippet = conn.execute('SELECT id FROM snippets WHERE id = ? AND (is_private = 0 OR user_id = ?)',
+                              (id, user_id)).fetchone()
+        if not snippet:
+            if is_ajax: return jsonify({'success': False, 'message': 'Snippet not found or not accessible'}), 404
+            flash('Snippet not found or not accessible.', 'error'); return redirect(request.referrer or url_for('explore'))
+
+        existing_vote_row = conn.execute(
+            'SELECT vote_type FROM votes WHERE user_id = ? AND snippet_id = ?',
+            (user_id, id)
+        ).fetchone()
+        current_vote = existing_vote_row['vote_type'] if existing_vote_row else None
+        new_vote_state = None
+
+        conn.execute('BEGIN') # Use transaction
+        if current_vote == 1: # Clicking upvote again
+            conn.execute('DELETE FROM votes WHERE user_id = ? AND snippet_id = ?', (user_id, id))
+            new_vote_state = None
+        elif current_vote == -1: # Switching from downvote to upvote
+            conn.execute('UPDATE votes SET vote_type = 1, created_at = CURRENT_TIMESTAMP WHERE user_id = ? AND snippet_id = ?', (user_id, id))
+            new_vote_state = 1
+        else: # No existing vote or vote was removed
+            conn.execute('INSERT INTO votes (user_id, snippet_id, vote_type) VALUES (?, ?, 1)', (user_id, id))
+            new_vote_state = 1
+        conn.commit() # Commit transaction
+
+        # Recalculate counts AFTER changes
+        counts = conn.execute('''
+            SELECT
+                SUM(CASE WHEN vote_type = 1 THEN 1 ELSE 0 END) as upvotes,
+                SUM(CASE WHEN vote_type = -1 THEN 1 ELSE 0 END) as downvotes
+            FROM votes WHERE snippet_id = ?
+        ''', (id,)).fetchone()
+        upvotes = counts['upvotes'] if counts else 0
+        downvotes = counts['downvotes'] if counts else 0
+
+        if is_ajax:
+            return jsonify({'success': True, 'upvotes': upvotes, 'downvotes': downvotes, 'user_vote': new_vote_state})
+        flash('Vote recorded!', 'success')
+        return redirect(request.referrer or url_for('explore'))
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"DB Error upvoting snippet {id} for user {user_id}: {e}")
+        if is_ajax: return jsonify({'success': False, 'message': 'Database error occurred.'}), 500
+        flash('Database error occurred.', 'error'); return redirect(request.referrer or url_for('explore'))
+
+
+@app.route('/downvote_snippet/<int:id>', methods=['POST'])
+def downvote_snippet(id):
+    user_id = get_current_user_id()
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    if not user_id:
+        if is_ajax: return jsonify({'success': False, 'message': 'Please login to vote'}), 401
+        flash('Please login to vote.', 'error'); return redirect(url_for('login'))
+
+    conn = get_db()
+    try:
+         # Ensure snippet exists and is accessible (public or own private)
+        snippet = conn.execute('SELECT id FROM snippets WHERE id = ? AND (is_private = 0 OR user_id = ?)',
+                              (id, user_id)).fetchone()
+        if not snippet:
+            if is_ajax: return jsonify({'success': False, 'message': 'Snippet not found or not accessible'}), 404
+            flash('Snippet not found or not accessible.', 'error'); return redirect(request.referrer or url_for('explore'))
+
+        existing_vote_row = conn.execute(
+            'SELECT vote_type FROM votes WHERE user_id = ? AND snippet_id = ?',
+            (user_id, id)
+        ).fetchone()
+        current_vote = existing_vote_row['vote_type'] if existing_vote_row else None
+        new_vote_state = None
+
+        conn.execute('BEGIN') # Use transaction
+        if current_vote == -1: # Clicking downvote again
+            conn.execute('DELETE FROM votes WHERE user_id = ? AND snippet_id = ?', (user_id, id))
+            new_vote_state = None
+        elif current_vote == 1: # Switching from upvote to downvote
+            conn.execute('UPDATE votes SET vote_type = -1, created_at = CURRENT_TIMESTAMP WHERE user_id = ? AND snippet_id = ?', (user_id, id))
+            new_vote_state = -1
+        else: # No existing vote or vote was removed
+            conn.execute('INSERT INTO votes (user_id, snippet_id, vote_type) VALUES (?, ?, -1)', (user_id, id))
+            new_vote_state = -1
+        conn.commit() # Commit transaction
+
+        # Recalculate counts AFTER changes
+        counts = conn.execute('''
+            SELECT
+                SUM(CASE WHEN vote_type = 1 THEN 1 ELSE 0 END) as upvotes,
+                SUM(CASE WHEN vote_type = -1 THEN 1 ELSE 0 END) as downvotes
+            FROM votes WHERE snippet_id = ?
+        ''', (id,)).fetchone()
+        upvotes = counts['upvotes'] if counts else 0
+        downvotes = counts['downvotes'] if counts else 0
+
+        if is_ajax:
+            return jsonify({'success': True, 'upvotes': upvotes, 'downvotes': downvotes, 'user_vote': new_vote_state})
+        flash('Vote recorded!', 'success')
+        return redirect(request.referrer or url_for('explore'))
+
+    except sqlite3.Error as e:
+        conn.rollback()
+        app.logger.error(f"DB Error downvoting snippet {id} for user {user_id}: {e}")
+        if is_ajax: return jsonify({'success': False, 'message': 'Database error occurred.'}), 500
+        flash('Database error occurred.', 'error'); return redirect(request.referrer or url_for('explore'))
+
+# --- Misc Routes ---
+@app.route('/search_users')
+def search_users():
+    query = request.args.get('query', '').strip()
+    if not query:
+        return jsonify({'users': []})
+
+    conn = get_db()
+    try:
+        search_term = f'%{query}%'
+        users = conn.execute('''
+            SELECT u.username, u.profile_picture,
+                   (SELECT COUNT(*) FROM snippets WHERE user_id = u.id AND is_private = 0) as snippet_count
+            FROM users u
+            WHERE u.username LIKE ?
+            LIMIT 10 -- Limit results
+        ''', (search_term,)).fetchall()
+
+        return jsonify({
+            'users': [
+                {'username': user['username'], 'snippet_count': user['snippet_count'], 'profile_picture': user['profile_picture']}
+                for user in users
+            ]
+        })
+    except sqlite3.Error as e:
+        app.logger.error(f"Database error in search_users for query '{query}': {e}")
+        return jsonify({'users': [], 'error': 'Database search error'}), 500
+
 
 @app.route('/logout')
 def logout():
@@ -951,143 +1626,70 @@ def logout():
     flash('Logged out successfully!', 'success')
     return redirect(url_for('login'))
 
+# --- Optional Rating Route (Consider removing if up/down votes suffice) ---
 @app.route('/rate/<int:snippet_id>', methods=['POST'])
 def rate_snippet(snippet_id):
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
-    
+
     data = request.get_json()
     rating = data.get('rating')
-    
-    if not rating or not (1 <= rating <= 5):
-        return jsonify({'success': False, 'error': 'Invalid rating'}), 400
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
+
+    if not isinstance(rating, int) or not (1 <= rating <= 5):
+        return jsonify({'success': False, 'error': 'Invalid rating (must be 1-5)'}), 400
+
+    conn = get_db()
     try:
-        c.execute('''
+        # Check if snippet exists and is accessible
+        snippet = conn.execute('SELECT id FROM snippets WHERE id = ? AND (is_private = 0 OR user_id = ?)',
+                              (snippet_id, user_id)).fetchone()
+        if not snippet:
+            return jsonify({'success': False, 'error': 'Snippet not found or not accessible'}), 404
+
+        conn.execute('BEGIN')
+        # Insert or update rating
+        conn.execute('''
             INSERT OR REPLACE INTO ratings (snippet_id, user_id, rating)
             VALUES (?, ?, ?)
-        ''', (snippet_id, session['user_id'], rating))
-        
-        c.execute('''
-            UPDATE snippets 
-            SET rating_total = (
-                SELECT SUM(rating) FROM ratings WHERE snippet_id = ?
-            ),
-            rating_count = (
-                SELECT COUNT(*) FROM ratings WHERE snippet_id = ?
-            )
-            WHERE id = ?
-        ''', (snippet_id, snippet_id, snippet_id))
-        
+        ''', (snippet_id, user_id, rating))
+
+        # Update aggregate columns in snippets table
+        conn.execute('''
+            UPDATE snippets
+            SET rating_total = (SELECT SUM(rating) FROM ratings WHERE snippet_id = :sid),
+                rating_count = (SELECT COUNT(*) FROM ratings WHERE snippet_id = :sid)
+            WHERE id = :sid
+        ''', {'sid': snippet_id})
         conn.commit()
-        
-        snippet = c.execute('''
-            SELECT rating_total, rating_count 
-            FROM snippets 
-            WHERE id = ?
-        ''', (snippet_id,)).fetchone()
-        
-        new_rating = round(snippet[0] / snippet[1], 1) if snippet[1] > 0 else 0
-        
-        conn.close()
+
+        # Fetch updated average rating
+        updated_snippet = conn.execute(
+            'SELECT rating_total, rating_count FROM snippets WHERE id = ?', (snippet_id,)
+        ).fetchone()
+
+        new_avg_rating = 0
+        rating_count = 0
+        if updated_snippet and updated_snippet['rating_count'] > 0:
+             rating_count = updated_snippet['rating_count']
+             new_avg_rating = round(updated_snippet['rating_total'] / rating_count, 1)
+
         return jsonify({
-            'success': True, 
-            'new_rating': new_rating,
-            'rating_count': snippet[1]
+            'success': True,
+            'new_rating': new_avg_rating,
+            'rating_count': rating_count
         })
+
     except sqlite3.Error as e:
         conn.rollback()
-        conn.close()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        app.logger.error(f"DB Error rating snippet {snippet_id} by user {user_id}: {e}")
+        return jsonify({'success': False, 'error': 'Database error occurred'}), 500
 
-@app.route('/upvote_snippet/<int:id>', methods=['POST'])
-def upvote_snippet(id):
-    if 'user_id' not in session:
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        if is_ajax:
-            return jsonify({'success': False, 'message': 'Please login to vote'}), 401
-        flash('Please login to vote.', 'error')
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    existing_vote = c.execute('''
-        SELECT vote_type FROM votes 
-        WHERE user_id = ? AND snippet_id = ?
-    ''', (session['user_id'], id)).fetchone()
-    
-    if existing_vote:
-        if existing_vote[0] == 'up':
-            c.execute('DELETE FROM votes WHERE user_id = ? AND snippet_id = ?',
-                     (session['user_id'], id))
-        else:
-            c.execute('''
-                UPDATE votes 
-                SET vote_type = 'up' 
-                WHERE user_id = ? AND snippet_id = ?
-            ''', (session['user_id'], id))
-    else:
-        c.execute('''
-            INSERT INTO votes (user_id, snippet_id, vote_type)
-            VALUES (?, ?, 'up')
-        ''', (session['user_id'], id))
-    
-    upvotes = c.execute('SELECT COUNT(*) FROM votes WHERE snippet_id = ? AND vote_type = "up"', (id,)).fetchone()[0]
-    conn.commit()
-    conn.close()
-    
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    if is_ajax:
-        return jsonify({'success': True, 'upvotes': upvotes})
-    return redirect(request.referrer or url_for('explore'))
-
-@app.route('/downvote_snippet/<int:id>', methods=['POST'])
-def downvote_snippet(id):
-    if 'user_id' not in session:
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-        if is_ajax:
-            return jsonify({'success': False, 'message': 'Please login to vote'}), 401
-        flash('Please login to vote.', 'error')
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    existing_vote = c.execute('''
-        SELECT vote_type FROM votes 
-        WHERE user_id = ? AND snippet_id = ?
-    ''', (session['user_id'], id)).fetchone()
-    
-    if existing_vote:
-        if existing_vote[0] == 'down':
-            c.execute('DELETE FROM votes WHERE user_id = ? AND snippet_id = ?',
-                     (session['user_id'], id))
-        else:
-            c.execute('''
-                UPDATE votes 
-                SET vote_type = 'down' 
-                WHERE user_id = ? AND snippet_id = ?
-            ''', (session['user_id'], id))
-    else:
-        c.execute('''
-            INSERT INTO votes (user_id, snippet_id, vote_type)
-            VALUES (?, ?, 'down')
-        ''', (session['user_id'], id))
-    
-    downvotes = c.execute('SELECT COUNT(*) FROM votes WHERE snippet_id = ? AND vote_type = "down"', (id,)).fetchone()[0]
-    conn.commit()
-    conn.close()
-    
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    if is_ajax:
-        return jsonify({'success': True, 'downvotes': downvotes})
-    return redirect(request.referrer or url_for('explore'))
-
+# --- Main Execution ---
 if __name__ == '__main__':
+    # Ensure upload folder exists (redundant check, but safe)
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
+    # Set debug=False for production
+    # Port can be configured via environment variable or command line arg
     app.run(debug=True, port=5001)

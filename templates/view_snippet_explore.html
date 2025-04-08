@@ -1,117 +1,33 @@
 {% extends "base.html" %}
 
 {% block styles %}
+{# Keep Prism and Font links #}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-    body {
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-        overflow-y: auto;
-        font-family: 'Manrope', sans-serif;
-    }
-
-    .main-container {
-        position: relative;
-        width: 100%;
-        min-height: 100vh;
-        padding: 3rem 0;
-        background: linear-gradient(to bottom right, #f9fafb, #eef2ff, #f9fafb) no-repeat;
-        background-size: cover;
-    }
-    .dark .main-container {
-        background: linear-gradient(to bottom right, #111827, #1f2937, #111827) no-repeat;
-    }
-
-    .code-container {
-        max-height: 70vh;
-        overflow: auto;
-        border-radius: 1rem;
-        background: linear-gradient(to bottom right, #ffffff, #f8fafc);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(229, 231, 235, 0.3);
-    }
-    .dark .code-container {
-        background: linear-gradient(to bottom right, #1f2937, #111827);
-        border: 1px solid rgba(55, 65, 81, 0.3);
-    }
-
-    pre[class*="language-"] {
-        background: transparent !important;
-        margin: 0 !important;
-        padding: 2rem !important;
-        border-radius: 0 !important;
-        max-height: none !important;
-    }
-    
-    code[class*="language-"] {
-        font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-        font-size: 0.9rem !important;
-        line-height: 1.8 !important;
-        white-space: pre !important;
-        word-break: normal !important;
-        word-wrap: normal !important;
-        tab-size: 4 !important;
-        color: #1f2937;
-    }
-    .dark code[class*="language-"] {
-        color: #d1d5db;
-    }
-
-    .comments-section {
-        margin-top: 2.5rem;
-        background: linear-gradient(to bottom right, #ffffff, #f8fafc);
-        border-radius: 1rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(229, 231, 235, 0.3);
-    }
-    .dark .comments-section {
-        background: linear-gradient(to bottom right, #1f2937, #111827);
-        border: 1px solid rgba(55, 65, 81, 0.3);
-    }
-
-    #comments-container, .comment-thread, .nested-replies {
-        height: auto;
-        overflow: visible;
-    }
-
-    .comment-thread {
-        margin-bottom: 2rem;
-    }
-
-    .nested-replies {
-        margin-left: 1.5rem;
-        border-left: 2px solid rgba(229, 231, 235, 0.3);
-    }
-    .dark .nested-replies {
-        border-left-color: rgba(55, 65, 81, 0.3);
-    }
-
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: rgba(99, 102, 241, 0.4);
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgba(99, 102, 241, 0.6);
-    }
-
-    .token.comment { color: #6A9955 !important; }
-    .token.function { color: #DCDCAA !important; }
-    .token.keyword { color: #569CD6 !important; }
-    .token.string { color: #CE9178 !important; }
-    .token.number { color: #B5CEA8 !important; }
-    .token.operator { color: #D4D4D4 !important; }
-    .token.class-name { color: #4EC9B0 !important; }
-    .token.constant { color: #4FC1FF !important; }
+    /* Keep all your existing styles */
+    body { margin: 0; padding: 0; min-height: 100vh; overflow-y: auto; font-family: 'Manrope', sans-serif; }
+    .main-container { position: relative; width: 100%; min-height: 100vh; padding: 3rem 0; background: linear-gradient(to bottom right, #f9fafb, #eef2ff, #f9fafb) no-repeat; background-size: cover; }
+    .dark .main-container { background: linear-gradient(to bottom right, #111827, #1f2937, #111827) no-repeat; }
+    .code-container { max-height: 70vh; overflow: auto; border-radius: 1rem; background: linear-gradient(to bottom right, #ffffff, #f8fafc); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); border: 1px solid rgba(229, 231, 235, 0.3); }
+    .dark .code-container { background: linear-gradient(to bottom right, #1f2937, #111827); border: 1px solid rgba(55, 65, 81, 0.3); }
+    pre[class*="language-"] { background: transparent !important; margin: 0 !important; padding: 2rem !important; border-radius: 0 !important; max-height: none !important; }
+    code[class*="language-"] { font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important; font-size: 0.9rem !important; line-height: 1.8 !important; white-space: pre !important; word-break: normal !important; word-wrap: normal !important; tab-size: 4 !important; color: #1f2937; }
+    .dark code[class*="language-"] { color: #d1d5db; }
+    .comments-section { margin-top: 2.5rem; background: linear-gradient(to bottom right, #ffffff, #f8fafc); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); border: 1px solid rgba(229, 231, 235, 0.3); }
+    .dark .comments-section { background: linear-gradient(to bottom right, #1f2937, #111827); border: 1px solid rgba(55, 65, 81, 0.3); }
+    #comments-container, .comment-thread, .nested-replies { height: auto; overflow: visible; }
+    .comment-thread { margin-bottom: 2rem; }
+    .nested-replies { margin-left: 1.5rem; border-left: 2px solid rgba(229, 231, 235, 0.3); }
+    .dark .nested-replies { border-left-color: rgba(55, 65, 81, 0.3); }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+    /* Keep Prism token colors */
+    .token.comment { color: #6A9955 !important; } .token.function { color: #DCDCAA !important; } .token.keyword { color: #569CD6 !important; } .token.string { color: #CE9178 !important; } .token.number { color: #B5CEA8 !important; } .token.operator { color: #D4D4D4 !important; } .token.class-name { color: #4EC9B0 !important; } .token.constant { color: #4FC1FF !important; }
 </style>
 {% endblock %}
 
@@ -122,8 +38,10 @@
         <div class="code-container">
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200/20 dark:border-gray-700/20 bg-gray-50/50 dark:bg-gray-800/50">
                 <div class="flex items-center space-x-4">
-                    <span class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-100/80 dark:bg-indigo-900/80 px-4 py-1.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50 shadow-sm">{{ snippet[3] }}</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400 font-light">{{ snippet[2] | length }} characters</span>
+                    {# ***** FIX: Use snippet.language ***** #}
+                    <span class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-100/80 dark:bg-indigo-900/80 px-4 py-1.5 rounded-full border border-indigo-200/50 dark:border-indigo-800/50 shadow-sm">{{ snippet.language | default('N/A') }}</span>
+                    {# ***** FIX: Use snippet.code ***** #}
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-light">{{ snippet.code | length }} characters</span>
                 </div>
                 <div class="flex items-center space-x-4">
                     <button id="copy-button" class="group inline-flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 ease-out transform hover:scale-105">
@@ -132,208 +50,449 @@
                         </svg>
                         Copy
                     </button>
+                    {# Add Bookmark and Favorite buttons here if needed, checking is_bookmarked / is_favorited #}
+                     {% if session.user_id %}
+                        {# Example Bookmark Button (Style similar to Copy) #}
+                         <button
+                             id="bookmark-button"
+                             type="button"
+                             class="bookmark-toggle group/bookmark inline-flex items-center text-sm font-semibold transition-all duration-300 ease-out transform hover:scale-105
+                                    {% if is_bookmarked %} text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300
+                                    {% else %} text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 {% endif %}"
+                             data-snippet-id="{{ snippet.id }}"
+                             aria-label="{{ 'Remove bookmark' if is_bookmarked else 'Add bookmark' }}"
+                             title="{{ 'Bookmarked' if is_bookmarked else 'Bookmark' }}" >
+                             <i class="fa-bookmark text-lg mr-2 {# <--- Increased size #}
+                                {% if is_bookmarked %} fas {% else %} far group-hover/bookmark:text-amber-500 dark:group-hover/bookmark:text-amber-400 {% endif %}
+                                transition-colors"></i>
+                              <span class="bookmark-text">Bookmark{{ 'ed' if is_bookmarked else ''}}</span> {# Optional text change #}
+                         </button>
+
+                         {# Example Favorite Button (relevant if viewer owns snippet) #}
+                         {% if snippet.user_id == session.user_id %}
+                             <button
+                                 id="favorite-button"
+                                 type="button"
+                                 class="favorite-toggle group/fav inline-flex items-center text-sm font-semibold transition-all duration-300 ease-out transform hover:scale-105
+                                        {% if is_favorited %} text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300
+                                        {% else %} text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 {% endif %}"
+                                 data-snippet-id="{{ snippet.id }}"
+                                 aria-label="{{ 'Unfavorite' if is_favorited else 'Favorite' }}"
+                                 title="{{ 'Favorited' if is_favorited else 'Favorite' }}" >
+                                 <i class="fa-heart text-lg mr-2 {# <--- Increased size #}
+                                    {% if is_favorited %} fas {% else %} far group-hover/fav:text-pink-500 dark:group-hover/fav:text-pink-400 {% endif %}
+                                    transition-colors"></i>
+                                 Favorite{{ 'd' if is_favorited else ''}}
+                             </button>
+                         {% endif %}
+                     {% endif %}
+
                 </div>
             </div>
             <div class="overflow-x-auto" id="code-container">
-                <pre class="p-6 m-0"><code id="codeBlock" class="language-{{ snippet[3] }}">{{ snippet[2] }}</code></pre>
+                {# ***** FIX: Use snippet.language and snippet.code ***** #}
+                <pre class="p-6 m-0"><code id="codeBlock" class="language-{{ snippet.language }}">{{ snippet.code }}</code></pre>
             </div>
         </div>
 
         <!-- Snippet Info -->
         <div class="rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800/50 shadow-lg border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4 bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 tracking-tight">{{ snippet[1] }}</h1>
-            {% if snippet[4] %}
-                <p class="text-gray-600 dark:text-gray-300 font-light mb-4 leading-relaxed">{{ snippet[4] }}</p>
+             {# ***** FIX: Use snippet.title ***** #}
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4 bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 tracking-tight">{{ snippet.title }}</h1>
+             {# ***** FIX: Use snippet.description ***** #}
+            {% if snippet.description %}
+                <p class="text-gray-600 dark:text-gray-300 font-light mb-4 leading-relaxed">{{ snippet.description }}</p>
             {% endif %}
             <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 font-light">
                 <div class="flex items-center space-x-3">
                     <span>Created by</span>
-                    <a href="{{ url_for('profile', username=snippet[6]) }}" class="inline-flex items-center gap-2 group">
+                     {# ***** FIX: Use snippet.owner_username ***** #}
+                    <a href="{{ url_for('profile', username=snippet.owner_username) }}" class="inline-flex items-center gap-2 group">
                         <span class="h-8 w-8 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-800 dark:to-purple-800 text-indigo-700 dark:text-indigo-300 text-sm font-semibold flex items-center justify-center group-hover:ring-2 group-hover:ring-indigo-400 transition-all duration-200 shadow-sm">
-                            {{ snippet[6][0] | upper }}
+                            {# ***** FIX: Use snippet.owner_username[0] - Important! ***** #}
+                            {% if snippet.owner_username %}{{ snippet.owner_username[0] | upper }}{% else %}?{% endif %}
                         </span>
-                        <span class="font-semibold text-gray-700 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ snippet[6] }}</span>
+                        {# ***** FIX: Use snippet.owner_username ***** #}
+                        <span class="font-semibold text-gray-700 dark:text-gray-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ snippet.owner_username }}</span>
                     </a>
                 </div>
-                <span>{{ snippet[5].split(' ')[0] }}</span>
+                {# ***** FIX: Use snippet.created_at ***** #}
+                <span>{{ snippet.created_at.strftime('%b %d, %Y') if snippet.created_at and snippet.created_at.strftime else 'Unknown Date' }}</span>
             </div>
+             {# Add Votes Here if needed (assuming snippet has upvotes/downvotes keys) #}
+            <div class="mt-4 pt-4 border-t border-gray-200/30 dark:border-gray-700/30 flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
+                 <span title="Views" class="flex items-center"><svg class="h-5 w-5 mr-1.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> {{ snippet.views | default(0) }}</span>
+                 <button type="button" id="upvote-button" title="Upvote" class="flex items-center vote-btn {% if user_vote == 1 %} text-emerald-500 {% else %} hover:text-emerald-500 {% endif %} transition-colors" data-vote-type="1"><svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg> <span class="vote-count">{{ snippet.upvotes | default(0) }}</span></button>
+                 <button type="button" id="downvote-button" title="Downvote" class="flex items-center vote-btn {% if user_vote == -1 %} text-rose-500 {% else %} hover:text-rose-500 {% endif %} transition-colors" data-vote-type="-1"><svg class="h-5 w-5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg> <span class="vote-count">{{ snippet.downvotes | default(0) }}</span></button>
+             </div>
         </div>
 
         <!-- Comments Section -->
         <div class="comments-section p-6">
-            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6 tracking-tight">Discussion</h2>
-            
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-6 tracking-tight">Discussion <span id="comment-count-display"></span></h2>
+
             {% if session['user_id'] %}
             <div class="mb-8">
                 <form id="comment-form" class="space-y-4">
-                    <textarea 
-                        id="comment-content"
-                        rows="3"
-                        class="w-full px-5 py-4 rounded-xl bg-white/80 dark:bg-gray-900/80 border border-gray-200/50 dark:border-gray-700/50 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-md transition-all duration-300 ease-out backdrop-blur-sm"
-                        placeholder="Add to the discussion..."></textarea>
-                    <button type="submit" 
-                            class="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:scale-105">
-                        Comment
-                    </button>
+                    <textarea id="comment-content" rows="3" class="w-full px-5 py-4 rounded-xl bg-white/80 dark:bg-gray-900/80 border border-gray-200/50 dark:border-gray-700/50 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-md transition-all duration-300 ease-out backdrop-blur-sm" placeholder="Add to the discussion..."></textarea>
+                    <button type="submit" class="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-out transform hover:scale-105"> Comment </button>
                 </form>
             </div>
+            {% else %}
+             <p class="mb-6 text-center text-gray-600 dark:text-gray-400 font-light">
+                <a href="{{ url_for('login', next=request.url) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Login</a> or
+                <a href="{{ url_for('register', next=request.url) }}" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Register</a> to join the discussion.
+            </p>
             {% endif %}
 
             <div id="comments-container" class="space-y-6">
-                {% for comment in comments %}
-                <div class="comment-thread" data-comment-id="{{ comment.id }}">
-                    <div class="flex space-x-4">
-                        <div class="flex-shrink-0">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-md">
-                                <span class="text-white font-semibold">{{ comment.username[0] | upper }}</span>
-                            </div>
-                        </div>
-                        <div class="flex-grow">
-                            <div class="flex items-center space-x-3 mb-2">
-                                <span class="font-semibold text-gray-900 dark:text-white">{{ comment.username }}</span>
-                                <span class="text-sm text-gray-500 dark:text-gray-400 font-light">{{ comment.created_at }}</span>
-                            </div>
-                            <p class="text-gray-700 dark:text-gray-300 font-light mb-3 leading-relaxed">{{ comment.content }}</p>
-                            <div class="flex items-center space-x-4">
-                                <button onclick="toggleReplyForm('{{ comment.id }}')" 
-                                        class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-200">
-                                    Reply
-                                </button>
-                            </div>
-                            
-                            <!-- Reply form -->
-                            <div id="reply-form-{{ comment.id }}" class="mt-4 hidden">
-                                <textarea 
-                                    rows="2"
-                                    class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-gray-900/80 border border-gray-200/50 dark:border-gray-700/50 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-md transition-all duration-300 ease-out backdrop-blur-sm"
-                                    placeholder="Write a reply..."></textarea>
-                                <div class="mt-3 flex space-x-3">
-                                    <button onclick="submitReply('{{ comment.id }}')" 
-                                            class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-out transform hover:scale-105">
-                                        Reply
-                                    </button>
-                                    <button onclick="toggleReplyForm('{{ comment.id }}')" 
-                                            class="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200">
-                                        Cancel
-                                    </button>
+                 {# Comments will be dynamically loaded by JS or use template loop #}
+                 {% for comment in comments recursive %}
+                    <div class="comment-thread" data-comment-id="{{ comment.id }}">
+                        <div class="flex space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center shadow-md">
+                                    {# Assuming comment object has username #}
+                                    <span class="text-white font-semibold">{{ comment.username[0] | upper if comment.username else '?' }}</span>
                                 </div>
                             </div>
+                            <div class="flex-grow">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <span class="font-semibold text-gray-900 dark:text-white">{{ comment.username }}</span>
+                                    {# Assuming comment object has created_at #}
+                                    <span class="text-sm text-gray-500 dark:text-gray-400 font-light">{{ comment.created_at.strftime('%b %d, %Y %H:%M') if comment.created_at else ''}}</span>
+                                </div>
+                                 {# Assuming comment object has content #}
+                                 {# Corrected line using CSS for line breaks #}
+                                 <p class="text-gray-700 dark:text-gray-300 font-light mb-3 leading-relaxed whitespace-pre-wrap">{{ comment.content }}</p>
+                                <div class="flex items-center space-x-4">
+                                     {% if session['user_id'] %} {# Only show reply if logged in #}
+                                        <button onclick="toggleReplyForm('{{ comment.id }}')" class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-200"> Reply </button>
+                                    {% endif %}
+                                    {# Add other actions like edit/delete if applicable and authorized #}
+                                </div>
 
-                            <!-- Nested replies -->
-                            {% if comment.replies %}
-                            <div class="nested-replies mt-4 space-y-4">
-                                {% for reply in comment.replies %}
-                                <div class="flex space-x-4">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center shadow-sm">
-                                            <span class="text-white text-sm font-semibold">{{ reply.username[0] | upper }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow">
-                                        <div class="flex items-center space-x-3 mb-1">
-                                            <span class="font-semibold text-gray-900 dark:text-white">{{ reply.username }}</span>
-                                            <span class="text-sm text-gray-500 dark:text-gray-400 font-light">{{ reply.created_at }}</span>
-                                        </div>
-                                        <p class="text-gray-700 dark:text-gray-300 font-light leading-relaxed">{{ reply.content }}</p>
-                                    </div>
+                                <!-- Reply form -->
+                                <div id="reply-form-{{ comment.id }}" class="mt-4 hidden">
+                                    <textarea rows="2" class="w-full px-4 py-3 rounded-lg bg-white/80 dark:bg-gray-900/80 border border-gray-200/50 dark:border-gray-700/50 text-gray-900 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-md transition-all duration-300 ease-out backdrop-blur-sm" placeholder="Write a reply..."></textarea>
+                                    <div class="mt-3 flex space-x-3"> <button onclick="submitReply('{{ comment.id }}')" class="px-5 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ease-out transform hover:scale-105"> Reply </button> <button onclick="toggleReplyForm('{{ comment.id }}')" class="px-5 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"> Cancel </button> </div>
                                 </div>
-                                {% endfor %}
+
+                                <!-- Nested replies -->
+                                 {# Check if comment object has replies #}
+                                {% if comment.replies %}
+                                <div class="nested-replies mt-4 pl-4 space-y-4"> {# Added padding #}
+                                     {{ loop(comment.replies) }} {# Recursive call for nested replies #}
+                                </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
+                 {% else %}
+                      <p class="text-center text-gray-500 dark:text-gray-400 py-8">No comments yet. Be the first to discuss!</p>
+                 {% endfor %}
+             </div> {# End comments-container #}
         </div>
 
         <!-- Navigation and Actions -->
         <div class="flex justify-between items-center py-6">
-            <a href="{{ url_for('explore') }}" 
-               class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 ease-out group">
-                <svg class="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                </svg>
-                Back to Explore
-            </a>
-            {% if session['user_id'] %}
-                <button id="share-button" 
-                        class="inline-flex items-center text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors duration-300 ease-out group">
-                    <svg class="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                    </svg>
-                    Share
-                </button>
-            {% endif %}
+            <a href="{{ url_for('explore') }}" class="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-300 ease-out group"> <svg class="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"> <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" /> </svg> Back to Explore </a>
+             {% if session['user_id'] %}
+                 <button id="share-button" class="inline-flex items-center text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors duration-300 ease-out group"> <svg class="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"> <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /> </svg> Share </button>
+             {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
 
+
 {% block scripts %}
+{# Load Prism and autoloader BEFORE your custom script #}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-<script src="{{ url_for('static', filename='js/view_snippet_explore.js') }}"></script>
+{# Link to your custom JS file IF IT EXISTS AND IS NEEDED - otherwise use inline script #}
+{# <script src="{{ url_for('static', filename='js/view_snippet_explore.js') }}"></script> #}
 <script>
-    const snippetId = {{ snippet[0] }};
-    document.addEventListener('DOMContentLoaded', () => {
-        new SnippetExploreViewer(snippetId);
+    // Pass snippet ID from Flask/Jinja to JavaScript
+     // ***** FIX: Use snippet.id *****
+    const snippetId = {{ snippet.id | tojson }}; // Use tojson filter for safety
 
+    // Wrap all logic in DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Initialize Prism Highlighting ---
+         // Important: Call highlightAll AFTER the code block is in the DOM
+        Prism.highlightAll();
+
+        // --- Copy Button Functionality ---
         const copyButton = document.getElementById('copy-button');
         const codeBlock = document.getElementById('codeBlock');
-        const shareButton = document.getElementById('share-button');
-
         if (copyButton && codeBlock) {
-            copyButton.addEventListener('click', () => {
+             copyButton.addEventListener('click', () => {
                 navigator.clipboard.writeText(codeBlock.textContent).then(() => {
                     copyButton.innerHTML = '<svg class="h-5 w-5 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>Copied!';
-                    setTimeout(() => {
-                        copyButton.innerHTML = '<svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy';
-                    }, 2000);
-                }).catch(err => console.error('Copy failed:', err));
+                     copyButton.disabled = true; // Prevent rapid clicks
+                     setTimeout(() => {
+                        copyButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy';
+                         copyButton.disabled = false;
+                     }, 2000);
+                 }).catch(err => {
+                     console.error('Copy failed:', err);
+                     alert('Failed to copy code.'); // User feedback
+                 });
             });
         }
 
+        // --- Share Button Functionality ---
+        const shareButton = document.getElementById('share-button');
         if (shareButton) {
             shareButton.addEventListener('click', () => {
                 const url = window.location.href;
-                const title = document.querySelector('h1').textContent;
-                if (navigator.share) {
-                    navigator.share({ title, url }).catch(err => console.error('Share failed:', err));
-                } else {
-                    navigator.clipboard.writeText(url).then(() => {
+                 // Try to get title dynamically, fall back to default
+                const titleElement = document.querySelector('h1');
+                const title = titleElement ? titleElement.textContent : 'Check out this snippet!';
+
+                if (navigator.share) { // Use Web Share API if available
+                     navigator.share({ title, url }).catch(err => console.error('Share failed:', err));
+                 } else { // Fallback: Copy link to clipboard
+                     navigator.clipboard.writeText(url).then(() => {
+                         // Store original content to revert later
+                        const originalContent = shareButton.innerHTML;
                         shareButton.innerHTML = '<svg class="h-5 w-5 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>Link Copied!';
+                        shareButton.disabled = true;
                         setTimeout(() => {
-                            shareButton.innerHTML = '<svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" /></svg>Share';
-                        }, 2000);
-                    }).catch(err => console.error('Copy failed:', err));
-                }
+                            shareButton.innerHTML = originalContent; // Revert content
+                            shareButton.disabled = false;
+                        }, 2500); // Slightly longer timeout
+                     }).catch(err => {
+                         console.error('Copy failed for share fallback:', err);
+                         alert('Failed to copy share link.');
+                    });
+                 }
+             });
+        }
+
+        // --- Comment Form Submission ---
+        const commentForm = document.getElementById('comment-form');
+        if(commentForm) {
+            commentForm.addEventListener('submit', (e) => {
+                e.preventDefault(); // Prevent default form submission
+                const contentElement = document.getElementById('comment-content');
+                const content = contentElement.value.trim();
+
+                if(content && snippetId) {
+                    submitCommentOrReply(snippetId, content); // Use helper function
+                    contentElement.value = ''; // Clear textarea after submission attempt
+                 }
             });
         }
-    });
 
+         // --- Bookmark Button Toggle ---
+         addAjaxHandler('.bookmark-toggle', `/snippet/${snippetId}/toggle_bookmark`, 'POST', updateButtonState);
+         // --- Favorite Button Toggle ---
+         addAjaxHandler('.favorite-toggle', `/snippet/${snippetId}/toggle_favorite`, 'POST', updateButtonState);
+          // --- Vote Button Handling ---
+         addAjaxHandler('.vote-btn', (button) => `/snippet/${snippetId}/vote/${button.dataset.voteType}`, 'POST', updateVoteCounts);
+
+
+         // --- Update Comment Count Display ---
+         updateCommentCount();
+
+    }); // End DOMContentLoaded
+
+
+     // --- Helper function for Comment/Reply Submission ---
+     function submitCommentOrReply(snippetId, content, parentId = null) {
+         const url = `/api/comments`; // Assuming single API endpoint
+         const payload = {
+            snippet_id: snippetId,
+            content: content,
+         };
+         if (parentId) {
+             payload.parent_id = parentId;
+         }
+
+         // Add loading state maybe?
+         fetch(url, {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json',
+                 'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+         })
+         .then(response => {
+            // ... handle response, maybe reload or add dynamically ...
+            if(response.ok) return response.json();
+            // Handle errors better
+            throw new Error("Failed to post comment/reply");
+         })
+         .then(data => {
+             if (data.success) {
+                 // Reload for simplicity - ideally update DOM dynamically
+                 location.reload();
+             } else {
+                 alert(data.error || 'Failed to post.');
+             }
+         })
+         .catch(err => {
+             console.error('Comment/Reply error:', err);
+             alert(err.message);
+         });
+     }
+
+    // --- Toggle Reply Form Visibility ---
     function toggleReplyForm(commentId) {
         const form = document.getElementById(`reply-form-${commentId}`);
-        form.classList.toggle('hidden');
-    }
-
-    function submitReply(commentId) {
-        const textarea = document.querySelector(`#reply-form-${commentId} textarea`);
-        const content = textarea.value.trim();
-        if (content) {
-            fetch(`/snippet/${snippetId}/comment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, parent_id: commentId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload(); // Simple refresh; improve with dynamic DOM update if needed
-                }
-            })
-            .catch(err => console.error('Reply failed:', err));
+        if (form) {
+            form.classList.toggle('hidden');
+            if (!form.classList.contains('hidden')) {
+                 // Optionally focus the textarea when shown
+                 const textarea = form.querySelector('textarea');
+                 if (textarea) textarea.focus();
+            }
         }
     }
+
+    // --- Submit a Reply ---
+    function submitReply(commentId) {
+        const textarea = document.querySelector(`#reply-form-${commentId} textarea`);
+        if (textarea) {
+            const content = textarea.value.trim();
+            if (content && snippetId && commentId) {
+                 submitCommentOrReply(snippetId, content, commentId); // Use helper
+                 textarea.value = ''; // Clear after attempt
+                 toggleReplyForm(commentId); // Hide form again
+             }
+         }
+    }
+
+
+     // --- General AJAX Handler Helper ---
+    function addAjaxHandler(selector, urlOrFn, method = 'POST', callback) {
+        document.querySelectorAll(selector).forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                 const buttonElement = this; // Button that was clicked
+                 // Determine URL: can be fixed string or generated by function
+                const url = typeof urlOrFn === 'function' ? urlOrFn(buttonElement) : urlOrFn;
+
+                buttonElement.disabled = true;
+                buttonElement.classList.add('opacity-50'); // Visual feedback
+
+                fetch(url, { method, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+                    .then(response => response.json().then(data => {
+                        if (!response.ok) throw new Error(data.error || `HTTP error ${response.status}`);
+                        return data;
+                    }))
+                    .then(data => {
+                        if (data.success) {
+                            callback(buttonElement, data); // Pass button and data to callback
+                        } else {
+                            throw new Error(data.error || 'Operation failed');
+                        }
+                    })
+                    .catch(error => {
+                         console.error(`${selector} error:`, error);
+                         alert(error.message); // Show error to user
+                     })
+                    .finally(() => {
+                         buttonElement.disabled = false;
+                         buttonElement.classList.remove('opacity-50');
+                     });
+            });
+        });
+    }
+
+
+    // --- Callback for updating Bookmark/Favorite Button state ---
+    function updateButtonState(buttonElement, data) {
+        const isBookmarkedOrFavorited = data.status === 'added';
+         const iconElement = buttonElement.querySelector('i'); // Get icon
+         const textElement = buttonElement.querySelector('.bookmark-text') || buttonElement; // Update text if span exists
+         let baseClass;
+         let activeClass;
+         let inactiveClass;
+         let activeIconClass;
+         let inactiveIconClass;
+         let type = 'Bookmark'; // Default
+
+
+         if (buttonElement.classList.contains('bookmark-toggle')) {
+            baseClass = 'bookmark-toggle group/bookmark inline-flex items-center text-sm font-semibold transition-all duration-300 ease-out transform hover:scale-105'; // Keep base styles
+            activeClass = 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300'; // Active styles
+            inactiveClass = 'text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400'; // Inactive styles
+            activeIconClass = 'fas'; // Solid icon when active
+            inactiveIconClass = 'far group-hover/bookmark:text-amber-500 dark:group-hover/bookmark:text-amber-400'; // Outline icon, hover color
+
+            buttonElement.title = isBookmarkedOrFavorited ? 'Bookmarked' : 'Bookmark';
+            buttonElement.setAttribute('aria-label', isBookmarkedOrFavorited ? 'Remove bookmark' : 'Add bookmark');
+             // Update optional text
+             if (textElement && textElement.classList.contains('bookmark-text')) {
+                 textElement.textContent = isBookmarkedOrFavorited ? 'Bookmarked' : 'Bookmark';
+            }
+
+         } else if (buttonElement.classList.contains('favorite-toggle')) {
+            type = 'Favorite';
+            baseClass = 'favorite-toggle group/fav inline-flex items-center text-sm font-semibold transition-all duration-300 ease-out transform hover:scale-105';
+             activeClass = 'text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300';
+             inactiveClass = 'text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400';
+            activeIconClass = 'fas';
+            inactiveIconClass = 'far group-hover/fav:text-pink-500 dark:group-hover/fav:text-pink-400';
+
+            buttonElement.title = isBookmarkedOrFavorited ? 'Favorited' : 'Favorite';
+            buttonElement.setAttribute('aria-label', isBookmarkedOrFavorited ? 'Unfavorite' : 'Favorite');
+             // Update optional text
+             textElement.textContent = isBookmarkedOrFavorited ? 'Favorited' : 'Favorite';
+         }
+
+         // Reset classes then apply correct ones
+        buttonElement.className = baseClass; // Start fresh with base
+        iconElement.classList.remove('fas', 'far', 'group-hover/bookmark:text-amber-500', 'dark:group-hover/bookmark:text-amber-400', 'group-hover/fav:text-pink-500', 'dark:group-hover/fav:text-pink-400'); // Remove specific icon states
+
+         if (isBookmarkedOrFavorited) {
+            buttonElement.classList.add(...activeClass.split(' '));
+            iconElement.classList.add(activeIconClass);
+         } else {
+             buttonElement.classList.add(...inactiveClass.split(' '));
+             iconElement.classList.add(...inactiveIconClass.split(' '));
+         }
+     }
+
+     // --- Callback for updating Vote Counts ---
+    function updateVoteCounts(buttonElement, data) {
+        // Update counts based on data returned from backend (data.upvotes, data.downvotes)
+        // Find the corresponding upvote/downvote count elements RELATIVE to the button clicked or its container
+         const container = buttonElement.closest('.flex'); // Adjust selector if needed
+         if (container) {
+            const upvoteSpan = container.querySelector('#upvote-button .vote-count');
+            const downvoteSpan = container.querySelector('#downvote-button .vote-count');
+             const upvoteButton = container.querySelector('#upvote-button');
+             const downvoteButton = container.querySelector('#downvote-button');
+
+            if(upvoteSpan && data.upvotes !== undefined) upvoteSpan.textContent = data.upvotes;
+            if(downvoteSpan && data.downvotes !== undefined) downvoteSpan.textContent = data.downvotes;
+
+             // Update the active state appearance of buttons
+             upvoteButton?.classList.remove('text-emerald-500');
+             downvoteButton?.classList.remove('text-rose-500');
+             if (data.user_vote === 1) {
+                 upvoteButton?.classList.add('text-emerald-500');
+             } else if (data.user_vote === -1) {
+                 downvoteButton?.classList.add('text-rose-500');
+             }
+         }
+    }
+
+    // --- Update Comment Count Display ---
+    function updateCommentCount() {
+         const commentsContainer = document.getElementById('comments-container');
+         const countDisplay = document.getElementById('comment-count-display');
+         if (commentsContainer && countDisplay) {
+             const commentCount = commentsContainer.querySelectorAll('.comment-thread').length;
+             countDisplay.textContent = `(${commentCount})`;
+         }
+     }
+
+
 </script>
 {% endblock %}

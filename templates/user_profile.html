@@ -1,301 +1,327 @@
 {% extends "base.html" %}
 
+{% block title %}{{ user['username'] }}'s Profile{% endblock %}
+
+{% block head_extra %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
 {% block content %}
-<div class="profile-container">
-    <div class="profile-header">
-        <div class="profile-picture">
-            {% if user.profile_picture %}
-                <img src="{{ url_for('static', filename='uploads/profile_pictures/' + user.profile_picture) }}" alt="{{ user[1] }}'s profile picture">
-            {% else %}
-                <img src="{{ url_for('static', filename='images/default_profile.png') }}" alt="Default profile picture">
-            {% endif %}
-        </div>
-        <h1>{{ user[1] }}'s Profile</h1>
-        {% if user.bio %}
-            <p class="user-bio">{{ user.bio }}</p>
-        {% endif %}
-        
-        {% if 'user_id' in session and session['user_id'] != user[0] %}
-            <div class="follow-button-container">
-                {% if is_following %}
-                    <button onclick="unfollowUser('{{ user[1] }}')" 
-                            class="unfollow-button">
-                        Unfollow
-                    </button>
+<div class="profile-container min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50/30 dark:from-neutral-950 dark:via-gray-900 dark:to-indigo-900/20 text-gray-900 dark:text-gray-100 font-['Manrope',_'Inter',_sans-serif] antialiased relative isolate overflow-hidden">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.15)_0%,_rgba(0,0,0,0)_70%)] dark:bg-[radial-gradient(ellipse_at_center,_rgba(79,70,229,0.1)_0%,_rgba(0,0,0,0)_70%)] page-texture" aria-hidden="true"></div>
+
+    <div class="relative mx-auto px-8 sm:px-12 lg:px-16 xl:px-24 py-24 sm:py-32 max-w-screen-3xl">
+        <!-- Profile Header -->
+        <div class="profile-header mb-24 md:mb-32 text-center">
+            <div class="profile-picture mx-auto mb-8">
+                {% if user['profile_picture'] %}
+                    <img src="{{ url_for('static', filename='uploads/' + user['profile_picture']) }}" alt="{{ user['username'] }}'s profile picture" class="w-36 h-36 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-indigo-200 dark:border-indigo-700 shadow-xl">
                 {% else %}
-                    <button onclick="followUser('{{ user[1] }}')" 
-                            class="follow-button">
-                        Follow
-                    </button>
+                    <img src="{{ url_for('static', filename='images/default_profile.png') }}" alt="Default profile picture" class="w-36 h-36 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-indigo-200 dark:border-indigo-700 shadow-xl">
                 {% endif %}
             </div>
-        {% endif %}
-        
-        <div class="profile-stats">
-            <div class="stat-box">
-                <span class="stat-number">{{ stats[2] }}</span>
-                <span class="stat-label">Snippets</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-number">{{ stats[0] }}</span>
-                <span class="stat-label">Followers</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-number">{{ stats[1] }}</span>
-                <span class="stat-label">Following</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-number">{{ stats[3] }}</span>
-                <span class="stat-label">Total Upvotes</span>
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-white bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+                {{ user['username'] }}
+            </h1>
+            {% if user['bio'] %}
+                <p class="mt-6 text-lg lg:text-xl text-gray-600 dark:text-gray-300 font-light leading-relaxed max-w-2xl mx-auto">{{ user['bio'] }}</p>
+            {% else %}
+                <p class="mt-6 text-lg lg:text-xl text-gray-500 dark:text-gray-400 font-light leading-relaxed max-w-2xl mx-auto italic">User hasn’t added a bio yet.</p>
+            {% endif %}
+
+            <!-- Follow/Unfollow Button -->
+            {% if 'user_id' in session and session['user_id'] != user['id'] %}
+                <div class="mt-8">
+                    {% if is_following %}
+                        <button onclick="unfollowUser('{{ user['username'] }}')" class="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 hover:from-gray-300 hover:to-gray-400 dark:hover:from-gray-600 dark:hover:to-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-200 rounded-xl shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400 transition-all duration-200 ease-out transform hover:scale-[1.04] active:scale-[1.00] hover:shadow-xl">
+                            <i class="fas fa-user-minus mr-2 group-hover:-translate-x-1 transition-transform duration-200"></i> Unfollow
+                        </button>
+                    {% else %}
+                        <button onclick="followUser('{{ user['username'] }}')" class="group inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 active:from-indigo-800 active:to-purple-800 text-sm font-semibold text-white rounded-xl shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-400 transition-all duration-200 ease-out transform hover:scale-[1.04] active:scale-[1.00] hover:shadow-xl">
+                            <i class="fas fa-user-plus mr-2 group-hover:translate-x-1 transition-transform duration-200"></i> Follow
+                        </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <!-- Profile Stats -->
+            <div class="profile-stats grid grid-cols-2 sm:grid-cols-4 gap-8 mt-12 max-w-4xl mx-auto">
+                <div class="stat-box bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/50 dark:border-indigo-900/50 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="stat-number text-2xl font-semibold text-indigo-600 dark:text-indigo-400">{{ stats[2] }}</span>
+                    <span class="stat-label block text-sm text-gray-500 dark:text-gray-400 mt-1">Snippets</span>
+                </div>
+                <div class="stat-box bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/50 dark:border-indigo-900/50 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="stat-number text-2xl font-semibold text-indigo-600 dark:text-indigo-400">{{ stats[0] }}</span>
+                    <span class="stat-label block text-sm text-gray-500 dark:text-gray-400 mt-1">Followers</span>
+                </div>
+                <div class="stat-box bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/50 dark:border-indigo-900/50 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="stat-number text-2xl font-semibold text-indigo-600 dark:text-indigo-400">{{ stats[1] }}</span>
+                    <span class="stat-label block text-sm text-gray-500 dark:text-gray-400 mt-1">Following</span>
+                </div>
+                <div class="stat-box bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/50 dark:border-indigo-900/50 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="stat-number text-2xl font-semibold text-indigo-600 dark:text-indigo-400">{{ stats[3] }}</span>
+                    <span class="stat-label block text-sm text-gray-500 dark:text-gray-400 mt-1">Reputation</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="snippets-section">
-        <h2>Public Snippets</h2>
-        {% if snippets %}
-            <div class="snippets-grid">
-                {% for snippet in snippets %}
-                <div class="snippet-card">
-                    <h3>
-                        <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}">
-                            {{ snippet[1] }}
-                        </a>
-                    </h3>
-                    <div class="snippet-meta">
-                        <span class="language">{{ snippet[2] }}</span>
-                        <span class="date">{{ snippet[3][:10] }}</span>
-                    </div>
-                    <div class="vote-stats">
-                        <span class="upvotes">↑ {{ snippet[4] }}</span>
-                        <span class="downvotes">↓ {{ snippet[5] }}</span>
-                    </div>
-                    <div class="snippet-actions">
-                        <a href="{{ url_for('view_snippet_explore', id=snippet[0]) }}" 
-                           class="view-button">
-                            View Snippet
-                        </a>
-                    </div>
+        <!-- User Details Section -->
+        <section class="user-details-section mb-24 md:mb-32">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-8 tracking-tight">About {{ user['username'] }}</h2>
+            <div class="details-grid grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Full Name</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">{{ user['full_name'] if user['full_name'] else 'Not provided' }}</span>
                 </div>
-                {% endfor %}
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Date of Birth</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">{{ user['dob'] if user['dob'] else 'Not provided' }}</span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Status</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">{{ user['status']|capitalize if user['status'] else 'Not provided' }}</span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Profession</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">{{ user['profession']|capitalize if user['profession'] else 'Not provided' }}</span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Years of Experience</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">{{ user['experience'] if user['experience'] is not none else 'Not provided' }}</span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Highest Education</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">{{ user['education']|capitalize if user['education'] else 'Not provided' }}</span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Skills</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">
+                        {% if user['skills'] %}
+                            {{ user['skills'].split(',')|join(', ')|title }}
+                        {% else %}
+                            Not provided
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Country</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">{{ user['country']|capitalize if user['country'] else 'Not provided' }}</span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Website</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">
+                        {% if user['website'] %}
+                            {% set website_url = user['website'] if user['website'].startswith('http') else 'http://' + user['website'] %}
+                            <a href="{{ website_url }}" target="_blank" rel="noopener noreferrer" class="group/link text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors duration-200">{{ user['website'] }}</a>
+                        {% else %}
+                            Not provided
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="detail-item bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1">
+                    <span class="detail-label text-sm font-semibold text-gray-700 dark:text-gray-200">Joined</span>
+                    <span class="detail-value mt-2 block text-gray-600 dark:text-gray-300 font-light">
+                        {% if join_date %}
+                            {{ join_date.strftime('%b %d, %Y') }}
+                        {% else %}
+                            Not available
+                        {% endif %}
+                    </span>
+                </div>
             </div>
-        {% else %}
-            <p class="no-snippets">No public snippets yet.</p>
-        {% endif %}
+        </section>
+
+        <!-- Snippets Section -->
+        <section class="snippets-section mb-24 md:mb-32">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-8 tracking-tight">Public Snippets</h2>
+            {% if snippets %}
+                <div class="snippets-grid grid grid-cols-1 gap-x-12 gap-y-16 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {% for snippet in snippets %}
+                        <div class="snippet-card group flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-indigo-950/30 border border-gray-200/30 dark:border-indigo-900/30 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:border-indigo-300/50 dark:hover:border-indigo-600/50 transition-all duration-400 ease-out opacity-0 translate-y-6 hover:scale-[1.02] hover:bg-gradient-to-br hover:from-white hover:to-indigo-50/20 dark:hover:from-gray-900 dark:hover:to-indigo-900/40 backdrop-blur-sm" data-snippet-id="{{ snippet['id'] }}">
+                            <div class="p-8 pb-5">
+                                <div class="flex justify-between items-start mb-4 gap-4">
+                                    <h3 class="snippet-title text-xl font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
+                                        <a href="{{ url_for('view_snippet_explore', id=snippet['id']) }}" class="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors focus:outline-none focus-visible:underline focus-visible:decoration-indigo-500 focus-visible:decoration-2 underline-offset-2">
+                                            {{ snippet['title'] | default('Untitled Snippet') }}
+                                        </a>
+                                    </h3>
+                                    <span class="snippet-language flex-shrink-0 mt-0.5 inline-block px-4 py-2 rounded-full text-sm font-medium bg-indigo-100/80 text-indigo-700 dark:bg-indigo-900/80 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 backdrop-blur-sm">
+                                        {{ snippet['language'] | default('N/A') }}
+                                    </span>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-light">
+                                    {% if snippet['created_at'] and snippet['created_at'].strftime %}
+                                        <time datetime="{{ snippet['created_at'].isoformat() }}">{{ snippet['created_at'].strftime('%b %d, %Y') }}</time>
+                                    {% elif snippet['created_at'] %}
+                                        {{ snippet['created_at'] }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if snippet['description'] %}
+                                <div class="px-8 pb-6 text-sm text-gray-600 dark:text-gray-300 font-light line-clamp-3 leading-relaxed">
+                                    {{ snippet['description'] }}
+                                </div>
+                            {% else %}
+                                <div class="h-6"></div>
+                            {% endif %}
+                            <div class="px-8 py-5 bg-gray-50/30 dark:bg-indigo-950/20 border-t border-gray-200/20 dark:border-indigo-900/30 mt-auto flex items-center justify-between gap-6 transition-colors duration-300 group-hover:bg-indigo-50/40 dark:group-hover:bg-indigo-900/30">
+                                <div class="flex items-center space-x-8">
+                                    <span class="flex items-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-emerald-500 dark:text-emerald-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                                        <span class="vote-count">{{ snippet['upvotes'] | default(0) }}</span>
+                                    </span>
+                                    <span class="flex items-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-rose-500 dark:text-rose-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                                        <span class="vote-count">{{ snippet['downvotes'] | default(0) }}</span>
+                                    </span>
+                                </div>
+                                <a href="{{ url_for('view_snippet_explore', id=snippet['id']) }}" class="group/link inline-flex items-center text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 active:text-indigo-900 dark:active:text-indigo-500 transition-colors duration-200 focus:outline-none focus-visible:underline focus-visible:decoration-indigo-500">
+                                    <span>View</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 group-hover/link:translate-x-1 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-32 sm:py-40 bg-gradient-to-br from-white to-indigo-50/20 dark:from-gray-900 dark:to-indigo-900/30 rounded-2xl border border-gray-200/30 dark:border-indigo-900/30 shadow-xl mt-12 backdrop-blur-lg">
+                    <svg class="mx-auto h-16 w-16 text-indigo-300 dark:text-indigo-600 opacity-70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0l5.571 3-5.571 3m0 0l-5.571-3 5.571-3z" />
+                    </svg>
+                    <h3 class="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">{{ user['username'] }} hasn’t posted any public snippets yet.</h3>
+                </div>
+            {% endif %}
+        </section>
     </div>
 </div>
 
 <style>
-.profile-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.profile-header {
-    text-align: center;
-    margin-bottom: 40px;
-}
-
-/* Profile picture styles */
-.profile-picture {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    margin: 0 auto 20px;
-    overflow: hidden;
-    border: 3px solid #3F4F44;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-}
-
-.profile-picture img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* User bio styles */
-.user-bio {
-    max-width: 600px;
-    margin: 15px auto;
-    color: #666;
-    line-height: 1.5;
-    font-style: italic;
-}
-
-.follow-button-container {
-    margin: 20px 0;
-}
-
-.follow-button, .unfollow-button {
-    padding: 8px 24px;
-    border-radius: 6px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.follow-button {
-    background: #3F4F44;
-    color: white;
-    border: none;
-}
-
-.follow-button:hover {
-    background: #4a5d50;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.unfollow-button {
-    background: #fff;
-    color: #3F4F44;
-    border: 1px solid #3F4F44;
-}
-
-.unfollow-button:hover {
-    background: #f5f5f5;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.profile-stats {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-top: 20px;
-}
-
-.stat-box {
-    background: #f5f5f5;
-    padding: 15px 25px;
-    border-radius: 8px;
-    text-align: center;
-    border: 1px solid rgba(63, 79, 68, 0.1);
-}
-
-.stat-number {
-    display: block;
-    font-size: 24px;
-    font-weight: bold;
-    color: #3F4F44;
-}
-
-.stat-label {
-    font-size: 14px;
-    color: #666;
-}
-
-.snippets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.snippet-card {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px;
-    transition: transform 0.2s;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.snippet-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border-color: #3F4F44;
-}
-
-.snippet-card h3 {
-    margin: 0 0 10px 0;
-}
-
-.snippet-card a {
-    color: #333;
-    text-decoration: none;
-}
-
-.snippet-meta {
-    display: flex;
-    justify-content: space-between;
-    color: #666;
-    font-size: 14px;
-    margin: 10px 0;
-}
-
-.vote-stats {
-    display: flex;
-    gap: 15px;
-    color: #666;
-    margin: 10px 0;
-}
-
-.no-snippets {
-    text-align: center;
-    color: #666;
-    margin-top: 30px;
-}
-
-.snippet-actions {
-    margin-top: 15px;
-    text-align: center;
-}
-
-.view-button {
-    display: inline-block;
-    padding: 8px 16px;
-    background: #3F4F44;
-    color: white;
-    text-decoration: none;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.view-button:hover {
-    background: #4a5d50;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+    .page-texture {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+    .snippet-card { max-width: 24rem; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    .vote-count { min-width: 1.5ch; display: inline-block; text-align: center; font-variant-numeric: tabular-nums; }
 </style>
 
 <script>
-function followUser(username) {
-    fetch(`/follow/${username}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.message);
-        }
-    });
-}
+    document.addEventListener('DOMContentLoaded', function() {
+        // Follow/Unfollow Functions
+        function followUser(username) {
+            const button = event.currentTarget;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-user-plus mr-2"></i> Following...';
 
-function unfollowUser(username) {
-    fetch(`/unfollow/${username}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
+            fetch(`/follow/${username}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().catch(() => null).then(errData => {
+                        throw new Error(errData?.message || `HTTP error ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-user-plus mr-2 group-hover:translate-x-1 transition-transform duration-200"></i> Follow';
+                    alert('Could not follow user: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Follow error:', error);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-user-plus mr-2 group-hover:translate-x-1 transition-transform duration-200"></i> Follow';
+                alert('Failed to follow user. ' + error.message);
+            });
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
+
+        function unfollowUser(username) {
+            const button = event.currentTarget;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-user-minus mr-2"></i> Unfollowing...';
+
+            fetch(`/unfollow/${username}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().catch(() => null).then(errData => {
+                        throw new Error(errData?.message || `HTTP error ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-user-minus mr-2 group-hover:-translate-x-1 transition-transform duration-200"></i> Unfollow';
+                    alert('Could not unfollow user: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Unfollow error:', error);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-user-minus mr-2 group-hover:-translate-x-1 transition-transform duration-200"></i> Unfollow';
+                alert('Failed to unfollow user. ' + error.message);
+            });
+        }
+
+        // Expose functions to global scope for onclick
+        window.followUser = followUser;
+        window.unfollowUser = unfollowUser;
+
+        // Staggered Animation for Snippet Cards and Detail Items
+        const animatedElements = document.querySelectorAll('.snippet-card, .detail-item');
+        if (animatedElements.length > 0 && 'IntersectionObserver' in window) {
+            const observerOptions = { root: null, rootMargin: '0px 0px -15% 0px', threshold: 0.2 };
+            const observerCallback = (entries, observer) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const element = entry.target;
+                        const visibleElements = Array.from(animatedElements).filter(el => el.classList.contains('opacity-0'));
+                        const delay = Math.max(0, visibleElements.indexOf(element)) * 100;
+                        element.style.transitionDelay = `${delay}ms`;
+                        element.classList.remove('opacity-0', 'translate-y-6');
+                        element.classList.add('opacity-100', 'translate-y-0');
+                        observer.unobserve(element);
+                        element.addEventListener('transitionend', () => {
+                            element.style.transitionDelay = '';
+                        }, { once: true });
+                    }
+                });
+            };
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+            animatedElements.forEach(element => {
+                if (element.classList.contains('opacity-0')) {
+                    observer.observe(element);
+                } else {
+                    element.classList.add('opacity-100', 'translate-y-0');
+                }
+            });
         } else {
-            alert(data.message);
+            animatedElements.forEach(element => {
+                element.classList.remove('opacity-0', 'translate-y-6');
+                element.classList.add('opacity-100', 'translate-y-0');
+            });
         }
     });
-}
 </script>
 {% endblock %}
