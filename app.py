@@ -618,26 +618,26 @@ def setup_profile():
 def settings():
     user_id = get_current_user_id()
     if not user_id:
+        flash('Please login to access settings.', 'error')
         return redirect(url_for('login'))
 
     conn = get_db()
     try:
         if request.method == 'POST':
-            # Extract form data (similar to setup_profile, adjust fields as needed)
+            # Extract form data
             bio = request.form.get('bio')
             age = request.form.get('age')
             dob = request.form.get('dob')
             profession = request.form.get('profession')
-            # Add other fields from settings form: full_name, status, experience, etc.
             full_name = request.form.get('full_name')
             status = request.form.get('status')
             experience = request.form.get('experience')
             education = request.form.get('education')
-            skills = ','.join(request.form.getlist('skills[]')) if request.form.getlist('skills[]') else ''
+            skills = ','.join(request.form.getlist('skills')) if request.form.getlist('skills') else ''
             country = request.form.get('country')
             website = request.form.get('website')
 
-            # Get current picture filename first
+            # Get current profile picture
             current_user = conn.execute('SELECT profile_picture FROM users WHERE id = ?', (user_id,)).fetchone()
             filename = current_user['profile_picture'] if current_user else None
 
@@ -650,34 +650,85 @@ def settings():
                     try:
                         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     except Exception as e_save:
-                         app.logger.error(f"Error saving profile picture '{filename}' in settings for user {user_id}: {e_save}")
-                         flash("Error saving profile picture.", "error")
-                         filename = current_user['profile_picture'] if current_user else None # Revert to old pic on save error
+                        app.logger.error(f"Error saving profile picture '{filename}' in settings for user {user_id}: {e_save}")
+                        flash("Error saving profile picture.", "error")
+                        filename = current_user['profile_picture'] if current_user else None  # Revert to old picture
 
-            # Basic Validation (repeat or refactor validation logic)
-            if not bio or len(bio) > 200:
-                flash('Bio is required and must be under 200 characters.', 'error')
-            elif age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
-                flash('Age must be a number between 13 and 120.', 'error')
-            elif dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
-                flash('Date of birth must be in YYYY-MM-DD format.', 'error')
-            else:
-                 # Update user data (include all fields from settings form)
-                conn.execute('''
-                    UPDATE users
-                    SET bio = ?, age = ?, dob = ?, profession = ?, full_name = ?,
-                        status = ?, experience = ?, education = ?, skills = ?,
-                        country = ?, website = ?, profile_picture = ?
-                    WHERE id = ?
-                ''', (bio, int(age) if age else None, dob, profession, full_name,
-                      status, int(experience) if experience else None, education,
-                      skills, country, website, filename, user_id))
-                conn.commit()
-                flash('Settings updated successfully!', 'success')
-                return redirect(url_for('profile'))
+            # Validation
+            errors = []
+            # Age: Optional, must be 13–120 if provided
+            if age and (not age.isdigit() or int(age) < 13 or int(age) > 120):
+                errors.append('Age must be a number between 13 and 120.')
+            # DOB: Optional, must be YYYY-MM-DD if provided
+            if dob and not re.match(r'^\d{4}-\d{2}-\d{2}$', dob):
+                errors.append('Date of birth must be in YYYY-MM-DD format.')
+            # Experience: Optional, must be 0–50 if provided
+            if experience and (not experience.isdigit() or int(experience) < 0 or int(experience) > 50):
+                errors.append('Experience must be a number between 0 and 50.')
+            # Website: Optional, basic URL check if provided
+            if website and not re.match(r'^https?://[^\s/$.?#].[^\s]*$', website):
+                errors.append('Website must be a valid URL (e.g., https://example.com).')
+            # Profession: Optional, must be valid option if provided
+            valid_professions = [
+                '', 'software_developer', 'data_scientist', 'web_designer', 'student',
+                'teacher', 'engineer', 'marketing_specialist', 'other'
+            ]
+            if profession and profession not in valid_professions:
+                errors.append('Invalid profession selected.')
+            # Status: Optional, must be valid option if provided
+            valid_statuses = ['', 'student', 'working_professional', 'freelancer', 'other']
+            if status and status not in valid_statuses:
+                errors.append('Invalid status selected.')
+            # Education: Optional, must be valid option if provided
+            valid_educations = [
+                '', 'high_school', 'associate', 'bachelor', 'master', 'phd',
+                'certificate', 'none'
+            ]
+            if education and education not in valid_educations:
+                errors.append('Invalid education selected.')
+            # Country: Optional, must be valid option if provided
+            valid_countries = ['', 'india', 'united_states', 'united_kingdom', 'canada', 'australia']
+            if country and country not in valid_countries:
+                errors.append('Invalid country selected.')
+
+            if errors:
+                for error in errors:
+                    flash(error, 'error')
+                # Re-render form with user data
+                user = conn.execute('''
+                    SELECT id, username, email, bio, age, dob, profession, profile_picture,
+                           full_name, status, experience, education, skills, country, website
+                    FROM users WHERE id = ?
+                ''', (user_id,)).fetchone()
+                return render_template('settings.html', user=user)
+
+            # Update user data
+            conn.execute('''
+                UPDATE users
+                SET bio = ?, age = ?, dob = ?, profession = ?, full_name = ?,
+                    status = ?, experience = ?, education = ?, skills = ?,
+                    country = ?, website = ?, profile_picture = ?
+                WHERE id = ?
+            ''', (
+                bio if bio and bio.strip() else None,
+                int(age) if age and age.isdigit() else None,
+                dob if dob else None,
+                profession if profession else None,
+                full_name if full_name and full_name.strip() else None,
+                status if status else None,
+                int(experience) if experience and experience.isdigit() else None,
+                education if education else None,
+                skills if skills else None,
+                country if country else None,
+                website if website and website.strip() else None,
+                filename,
+                user_id
+            ))
+            conn.commit()
+            flash('Settings updated successfully!', 'success')
+            return redirect(url_for('profile'))
 
         # GET Request: Fetch user data for the form
-        # Ensure you fetch ALL fields needed to populate the settings form
         user = conn.execute('''
             SELECT id, username, email, bio, age, dob, profession, profile_picture,
                    full_name, status, experience, education, skills, country, website
@@ -694,9 +745,12 @@ def settings():
         conn.rollback()
         app.logger.error(f"Database error during settings update for user {user_id}: {e}")
         flash("Database error saving settings.", "error")
-        # Fetch user data again for rendering the form even after error
-        user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
-        return render_template('settings.html', user=user) # Re-render form on DB error
+        user = conn.execute('''
+            SELECT id, username, email, bio, age, dob, profession, profile_picture,
+                   full_name, status, experience, education, skills, country, website
+            FROM users WHERE id = ?
+        ''', (user_id,)).fetchone()
+        return render_template('settings.html', user=user)
 
 
 @app.route('/upload_profile_picture', methods=['POST'])
@@ -1686,10 +1740,37 @@ def rate_snippet(snippet_id):
         return jsonify({'success': False, 'error': 'Database error occurred'}), 500
 
 # --- Main Execution ---
+import os # Ensure os is imported if not already
+
+# ... your Flask app setup (app = Flask(...), routes, etc.) ...
+
+# --- Main Execution ---
 if __name__ == '__main__':
-    # Ensure upload folder exists (redundant check, but safe)
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    # Set debug=False for production
-    # Port can be configured via environment variable or command line arg
-    app.run(debug=True, port=5001)
+    upload_folder = app.config.get('UPLOAD_FOLDER', 'static/uploads') # Get folder path safely
+    # Ensure upload folder exists
+    if not os.path.exists(upload_folder):
+         try:
+            os.makedirs(upload_folder)
+            print(f"Created upload folder: {upload_folder}")
+         except OSError as e:
+            print(f"Error creating upload folder {upload_folder}: {e}")
+
+    # Run the app, listening on all interfaces on port 1513
+    # Set debug=False if you want to test closer to production (less error info)
+    # Set debug=True for development features (like auto-reload)
+    print("--- Starting Flask Development Server ---")
+    print("Access locally: http://127.0.0.1:1513")
+    print("Attempting to listen on all network interfaces...")
+    print("(You might need to allow this through your firewall)")
+
+    try:
+        # Try running on 0.0.0.0
+        app.run(host='0.0.0.0', port=1513, debug=True) # Keep debug=True for local testing/reloading
+    except OSError as e:
+         print(f"\nError starting server on 0.0.0.0: {e}")
+         print("This might be a permissions issue or the port might be in use.")
+         print("Falling back to localhost (127.0.0.1). Only accessible on this machine.")
+         try:
+             app.run(host='127.0.0.1', port=1513, debug=True)
+         except Exception as inner_e:
+             print(f"Could not start server even on localhost: {inner_e}")
